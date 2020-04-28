@@ -86,15 +86,20 @@ protected final int tryAcquireShared(int unused) {
   	
   	//读线程不被阻塞、并且小于最大值、并且比较设置成功
     if (!readerShouldBlock() && r < MAX_COUNT && compareAndSetState(c, c + SHARED_UNIT)) {
-    		if (r == 0) { //第一个获取读锁的线程，读线程占用资源数为1
-    				firstReader = current;
-    				firstReaderHoldCount = 1;
-    		} else if (firstReader == current) {//更新首次获取锁线程占用的资源数，表示第一个获取读锁的线程重入的情况
-    				firstReaderHoldCount++;
-    		} else { 		//更新非首次获取锁线程的HoldCount
-    				HoldCounter rh = cachedHoldCounter;//先查缓存
-    				if (rh == null || rh.tid != getThreadId(current)){
-              	cachedHoldCounter = rh = readHolds.get(); //缓存没有命中，从ThreadLocal中获取
+        	//第一个获取读锁的线程，读线程占用资源数为1
+    		if (r == 0) {
+    			firstReader = current;
+    			firstReaderHoldCount = 1;
+    		}
+        	//更新首次获取锁线程占用的资源数，表示第一个获取读锁的线程重入的情况
+        	else if (firstReader == current) {
+    			firstReaderHoldCount++;
+    		} 
+            //更新非首次获取锁线程的HoldCount
+            else {
+    			HoldCounter rh = cachedHoldCounter;//先查缓存
+    			if (rh == null || rh.tid != getThreadId(current)){
+              		cachedHoldCounter = rh = readHolds.get(); //缓存没有命中，从ThreadLocal中获取
             } else if (rh.count == 0)
     				readHolds.set(rh);
     				rh.count++;

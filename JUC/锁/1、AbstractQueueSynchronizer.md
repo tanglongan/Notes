@@ -11,14 +11,14 @@ private transient volatile Node head;
 // 阻塞的尾节点，每个新的节点进来，都插入到最后，也就形成了一个链表
 private transient volatile Node tail;
 
-// 这个是最重要的，代表当前锁的状态，0代表没有被占用，大于 0 代表有线程持有当前锁
+// 核心属性，代表当前锁的状态，0：没有被占用，大于0：有线程持有当前锁
 // 这个值可以大于 1，是因为锁可以重入，每次重入都加上 1
 private volatile int state;
 
 // 代表当前持有独占锁的线程，举个最重要的使用例子，因为锁可以重入
 // reentrantLock.lock()可以嵌套调用多次，所以每次用这个来判断当前线程是否已经拥有了锁
 // if (currentThread == getExclusiveOwnerThread()) {state++}
-private transient Thread exclusiveOwnerThread; //继承自AbstractOwnableSynchronizer
+private transient Thread exclusiveOwnerThread; 
 ```
 
 同步器中维护的等待队列示意图如下，之后分析中的queue，不包含head
@@ -32,10 +32,10 @@ private transient Thread exclusiveOwnerThread; //继承自AbstractOwnableSynchro
         static final Node SHARED = new Node();	//标识当前节点在共享模式下
         static final Node EXCLUSIVE = null;		//标识当前节点在独占模式下
 
-        static final int CANCELLED =  1; //状态常量：线程被取消
-        static final int SIGNAL    = -1; //状态常量：当前节点的后继节点需要被唤醒
-        static final int CONDITION = -2; //状态常量：当前节点的线程等待Condition
-        static final int PROPAGATE = -3; //状态常量：
+        static final int CANCELLED =  1; //线程被取消
+        static final int SIGNAL    = -1; //当前节点的后继节点需要被唤醒
+        static final int CONDITION = -2; //当前节点的线程等待Condition
+        static final int PROPAGATE = -3; //
 
         volatile int waitStatus;//等待状态
         volatile Node prev;		//前置节点引用
@@ -73,16 +73,16 @@ private transient Thread exclusiveOwnerThread; //继承自AbstractOwnableSynchro
 下面以ReentrantLock为入口，逐步分析AQS。
 
 ```java
-// 我用个web开发中的service概念
+// 日常开发中的service案例
 public class OrderService {
-    // 使用static，这样每个线程拿到的是同一把锁，当然，spring mvc中service默认就是单例，别纠结这个
+    // 使用static，这样每个线程拿到的是同一把锁。
     private static ReentrantLock reentrantLock = new ReentrantLock(true);
     public void createOrder() {
         // 比如我们同一时间，只允许一个线程创建订单；lock 之后紧跟着 try 语句
         reentrantLock.lock();
         try {
-            // 这块代码同一时间只能有一个线程进来(获取到锁的线程)，其他的线程在lock()方法上阻塞，等待获取到锁，再进来
-            // 执行代码...
+            //这块代码区域同一时间只能有一个线程进来(拿到锁的线程)，
+            //其他线程在lock()方法上阻塞，等待获取到锁，再进来
         } finally {
             // 释放锁
             reentrantLock.unlock();
@@ -125,26 +125,33 @@ static final class FairSync extends Sync {
 	
     /** 从AQS继承，获取锁 */
     public final void acquire(int arg) {
-        //1、tryAcquire()方法先尝试获取锁，如果能获取成功，就直接返回了，也就不用后续放入队列等操作了
-        //2、addWaiter()方法是将当前线程构建成节点加入同步队列中。Node.EXCLUSIVE表示节点是独占模式
-        //3、acquireQueued()线程挂起，然后被唤醒的操作都在这个方法中，后续会详细分析它
+        //1、tryAcquire先尝试获取锁，如果能获取成功，就直接返回，不用后续放入队列等操作
+        //2、addWaiter将当前线程构建成节点加入同步队列中。Node.EXCLUSIVE即独占模式节点
+        //3、acquireQueued 线程挂起，然后被唤醒的操作都在这个方法中
         if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg)){
             selfInterrupt();
         }
     }
+    
     /**
      * 尝试获取锁
+     * 有2种成功获取锁的可能：锁没有被占用、当前线程已经持有锁
      */
     protected final boolean tryAcquire(int acquires) {
         final Thread current = Thread.currentThread();
         int c = getState();
+        // 1、判断锁有没有被其他线程占有
         if (c == 0) {
-            //
+            //公平锁这里hasQueuedPredecessors()方法先判断当前节点有没有前驱节点
+            //没有前驱节点说明此刻没有线程持有锁，就可以尝试获取锁
             if (!hasQueuedPredecessors() && compareAndSetState(0, acquires)) {
+                //拿到了锁，将当前线程设置为锁的拥有者
 				setExclusiveOwnerThread(current);
                 return true;
             }
-        }else if (current == getExclusiveOwnerThread()) {
+        } 
+        // 2、如果是当前线程再次获取锁的操作，锁状态增加acquire(默认都是增加1)
+        else if (current == getExclusiveOwnerThread()) {
             int nextc = c + acquires;
             if (nextc < 0) throw new Error("Maximum lock count exceeded");
             setState(nextc);
@@ -157,21 +164,23 @@ static final class FairSync extends Sync {
      * 将当前线程构建成节点，然后通过CAS操作添加到同步队列尾部
      */
     private Node addWaiter(Node mode) {
+        //waitStatus是int，因此Node()新节点的waitStatus=0
         Node node = new Node(Thread.currentThread(), mode);
         Node pred = tail;
-        // tail != null 表示队列不为空的时候
+        //tail!=null表示队列不为空的情况（可以先尝试CAS设置尾节点操作一把）
         if (pred != null) {
-            //将当前队列的尾节点设置为新节点的前置节点
             node.prev = pred;
+            //没有其他线程并发设置的时候，CAS操作成功则立即返回当前节点
+            //如果有其他线程也在入队设置，CAS可能失败，在下面enq方法中自旋入队
             if (compareAndSetTail(pred, node)) {
-                //进入此处，表示设置尾节点成功，将当前节点与之前尾节点链接起来，此时已经双向链接完成
                 pred.next = node;
-                //节点入队完成，返回当前节点对象
                 return node;
             }
         }
         
-        //代码执行到此处时，有2种可能：队列时空的、CAS设置失败(有其他线程同时也在竞争入队)
+        //代码执行到此处有2种可能
+        //（1）队列是空的
+        //（2）第一次尝试CAS设置尾节点的操作失败
         enq(node);
         return node;
     }
@@ -179,20 +188,23 @@ static final class FairSync extends Sync {
     /**
      * 采用自旋的方式将节点添加入队
      * 进入这个方法的2种情景：队列为空、有其他线程竞争入队
-     * 自旋的语义是： CAS设置添加尾节点的时候，竞争一次不行就不断尝试，直到成功为止
+     * 自旋的意思是： CAS原子操作设置添加尾节点的时候，不断尝试操作，直到成功为止
      */
     private Node enq(final Node node) {
         for (;;) {
             Node t = tail;
-            //队列为空的情景
+            //1、队列为空的情景
             if (t == null) {
-                //CAS更新操作，因为此刻可能有很多线程已经进来了，第一次初始化队列，给后面的做准备
+                //此刻可能有其他线程也进来了，CAS方式进行首次初始化队列操作
                 if (compareAndSetHead(new Node())){
-                    //初始化队列完成，head节点的waitStatus=0，Node()创建对象时，Java为int类型的waitStatus设置了默认0
-                    //这里没有return！下一次循环将进入下面的分支
+                    // 初始化队列完成，head节点的waitStatus=0
+                    // Node()创建对象时，int类型的waitStatus设置了默认0
+                    // 这里没有return，因此下一次循环将进入下面的分支
                     tail = head;
                 }
-            } else { //同时存在其他线程竞争入队
+            }
+            //2、与其他线程竞争操作，并发设置尾节点
+            else {
                 node.prev = t;
                 if (compareAndSetTail(t, node)) {
                     t.next = node;
@@ -203,9 +215,10 @@ static final class FairSync extends Sync {
     }
     
     /**
-     * 线程挂起，然后被唤醒后去竞争锁的过程方法
-     * 1、该方法的参数node，经过addWaiter()方法处理，已经添加到了阻塞队列中了
-     * 2、这个方法如果返回true的话，上面调用处就会进入selfInterrupt()，也就是说正常情况下，应该返回false
+     * 当前节点已经入队，线程进入阻塞等待（自旋）直到获取到锁为止
+     * 自旋过程做了两件事：
+     * 1、判断如果当前节点是队列首节点并且尝试获取锁成功，就结束自旋返回
+     * 2、如果当前线程节点不是队列首节点，就检查是否线程的中断状态
      */
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
@@ -214,19 +227,16 @@ static final class FairSync extends Sync {
             for (;;) {
                 //获取当前线程对应的节点的前置节点
                 final Node p = node.predecessor();
-                /* p==head 表示当前节点是阻塞队列中的第一个，因为它的前置节点是head
-                 * 注：阻塞队列不包含head节点，head节点表示占有锁的线程，链表中head后面的才是阻塞队列
-                 * tryAcquire()尝试去竞争锁。为什么这么做？
-                 * (1)它是队列第一个节点 (2)当前head可能是enq方法中刚初始化的节点，此刻的head节点没有关联线程，锁可竞争
-                 */
+                // 如果当前节点是队列的第一个节点，尝试获取锁
                 if (p == head && tryAcquire(arg)) {
                     setHead(node);
-                    p.next = null; // help GC
+                    p.next = null; // 断开引用，等待GC回收
                     failed = false;
                     return interrupted;
                 }
-                //执行到此处的情景：(1)当前线程在队列中不是第一个节点 (2)上面tryAcquire()没有抢赢其他线程
-                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt()){
+                
+                if (shouldParkAfterFailedAcquire(p,node) 
+                    && parkAndCheckInterrupt()){
                     interrupted = true;
                 } 
             }
@@ -238,39 +248,41 @@ static final class FairSync extends Sync {
     }
     
     /**
-     * 当前线程没有抢到锁，是否需要挂起当前线程
-     * pred参数前置节点，node参数是当前线程的节点
+     * 判断当前节点的线程是否需要被阻塞
+     * pred：前置节点
+     * node：当前节点
      */
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         int ws = pred.waitStatus;
-        //前置节点的状态为-1，说明前置节点正常，当前线程需要挂起，直接返回true
+        //前置节点的状态为-1，即前置节点正常，当前节点需要挂起
         if (ws == Node.SIGNAL){
             return true;
         }
-        //前置节点的同步状态大于0，说明前置节点线程取消了排队
-        //需要知道的是：进入阻塞队列的线程会被挂起，而唤醒的操作是由前置节点完成的
+        //前置节点同步状态大于0，即CANCELLED，说明前置节点线程取消了排队
+        //需要说明的是阻塞队列中的线程会被挂起，而唤醒操作是由前置节点完成的
         if (ws > 0) {
-            //下面循环是将当前节点prev指向 waitStatus<0的节点。
-            //简单说就是为了找一个好爹，因为还要依赖好爹唤醒它，循环向前遍历直到找到好爹为止
+            //下面循环是将当前节点prev指向 waitStatus< 0的节点。
+            //为了找一个好爹，因为还要依赖好爹唤醒它，向前遍历找到好爹为止
             do {
                 node.prev = pred = pred.prev;
             } while (pred.waitStatus > 0);
             pred.next = node;
         } else {
-            // 进入这个分支，意味着waitStatus不是-1和1，那么只能是0,2,3
-            // 在前面的源代码中没有看到设置waitStatus，所以每个节点入队时，节点的waitStatus=0
+            // 节点创建并入队时，节点的waitStatus=0
             // 通过CAS操作将前置节点的waitStatus设置为Node.SIGNAL（即-1）
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
-        //返回false，则会在acquireQueued()方法的循环中再次进入这个方法
+        //返回false，则会在acquireQueued()方法循环中再次进入当前方法
         return false;
     }
     
     /**
-     * 当shouldParkAfterFailedAcquire()方法返回true，也就是需要挂起当前线程的时候，这个方法就是用来挂起线程的
+     * 阻塞当前线程 
+     * 当shouldParkAfterFailedAcquire返回true，也就是需要挂起当前线程的时候调用
      */
     private final boolean parkAndCheckInterrupt() {
-        LockSupport.park(this); //LockSupport.park()方法挂起当前线程，然后停在这里，等待被唤醒
+        //阻塞当前线程，然后停在这里，等待被唤醒
+        LockSupport.park(this);
         return Thread.interrupted();
     }
     
@@ -323,8 +335,7 @@ protected final boolean tryRelease(int releases) {
 
 /**
  * 唤醒后继节点的线程
- * 当锁释放完毕之后，在tryRelease()方法中会返回true，此时释放锁的过程将进入下面的方法
- * 由release()方法中知道，node参数就是head节点
+ * 由release()方法中知道，node是head节点
  */
 private void unparkSuccessor(Node node) {
     int ws = node.waitStatus;
@@ -336,8 +347,9 @@ private void unparkSuccessor(Node node) {
     Node s = node.next;
     if (s == null || s.waitStatus > 0) {
         s = null;
-        //遍历找到阻塞队列中第一个处于待唤醒状态(waitStatus：0,-1,-2)的节点，后续就会唤醒它
+        //遍历找到阻塞队列中第一个处于待唤醒状态的节点，后续就会唤醒它
         for (Node t = tail; t != null && t != node; t = t.prev){
+            //waitStatus：0,-1,-2
             if (t.waitStatus <= 0){
                 s = t;
             } 
@@ -409,5 +421,5 @@ private Node enq(final Node node) {
 
 <img src=".images/20200410232923.png" alt="image-20200408230908841" style="zoom: 25%;" />
 
-这里可以简单说下 waitStatus 中 SIGNAL(-1) 状态的意思，Doug Lea 注释的是：代表后继节点需要被唤醒。也就是说这个 waitStatus 其实代表的不是自己的状态，而是后继节点的状态，我们知道，每个 node 在入队的时候，都会把前驱节点的状态改为 SIGNAL，然后阻塞，等待被前驱唤醒。这里涉及的是两个问题：有线程取消了排队、唤醒操作。其实本质是一样的，读者也可以顺着 “waitStatus代表后继节点的状态” 这种思路去看一遍源码。
+这里可以简单说下 waitStatus 中 SIGNAL(-1) 状态的意思，Doug Lea 注释的是：代表后继节点需要被唤醒。也就是说这个 waitStatus 其实代表的不是自己的状态，而是后继节点的状态，我们知道，每个 node 在入队的时候，都会把前驱节点的状态改为 SIGNAL，然后阻塞，等待被前驱唤醒。
 
