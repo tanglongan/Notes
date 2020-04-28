@@ -294,7 +294,7 @@ public class ConditionDemo {
     public void put(Object element) throws InterruptedException {
 		lock.lock();
         try {
-            //当数组元素等于数组长度时，表示数组已满，调用await()方法，当前线程随之释放锁并进入等待状态
+            //当表示数组已满，调用await()方法，当前线程随之释放锁并进入等待状态
             while (count == blockArray.length) {
                 System.out.println("put: putptr = " + putptr + ", await");
                 full.await();
