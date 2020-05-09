@@ -25,7 +25,7 @@
 
 ### 1.3、工作机制
 
-1. slave启动后向master发送SYNC命令，master接收到SYNC命令后通过bgsave保存RDB快照，并使用缓冲区记录保存快照这段时间内执行的写命令。
+1. slave启动后向master发送SYNC命令，master接到SYNC命令后通过bgsave保存RDB快照，并使用缓冲区记录保存快照这段时间内执行的写命令。
 2. master将保存的快照文件发送给slave，并继续记录执行的写命令。
 3. slave接收到快照文件后，加载快照文件，载入数据。
 4. master快照发送完后开始向slave发送缓冲区的写命令，slave接收命令并执行，完成复制初始化。
