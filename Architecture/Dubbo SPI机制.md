@@ -115,11 +115,11 @@ Transfer msg thorough TCP
 - **@Activate**：表明该扩展点是可被激活的扩展点，value为空表示默认激活，当value不为空时，则表示Dubbo URL中包含相关参数时才会激活。
 - **@Adaptive**：可以被标注在类和方法上。
     - 标注方法时，表明Dubbo会对生成的代理类的该方法进行自适应拓展，会根据URL中的参数调用相应的扩展点的方法。从而实现在运行时动态的决定加载某一个扩展点。相当于代理模式和策略模式的一个结合。基本上，每一个扩展点都会被Dubbo生成一个相应的自适应扩展类。
-    - 标注类时，则表明Dubbo直接使用该类作为已实现自适应扩展的类，而不用Dubbo再自行生成。目前Dubbo有这么两个类被加上了@Adaptive注解：`AdaptiveCompiler`和`AdaptiveExtensionFactory`。
+    - 标注类时，则表明Dubbo直接使用该类作为已实现自适应扩展的类，而不用Dubbo再自行生成。目前Dubbo有这么两个类被加上了@Adaptive注解：`AdaptiveCompiler`（整个框架仅支持javaassist和JdkCompiler）和`AdaptiveExtensionFactory`（整个框架仅有2个对象工厂：spi和spring）。
 
 ## 扩展点的IOC工厂
 
-Dubbo中频繁出现的ExtensionLoader类实现了对扩展点的管理。可以看到ExtensionLoader中维护了一个静态的ConcurrentHashMap，键为扩展点接口对应的Class，值为相对应的ExtensionLoader。
+Dubbo中频繁出现的ExtensionLoader类实现了对扩展点的管理。在ExtensionLoader中维护了一个静态的ConcurrentHashMap，键为扩展点接口对应的Class，值为相对应的ExtensionLoader。
 
 ```java
 static ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<>();
@@ -129,12 +129,12 @@ static ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new Concu
 
 ``` java
 Map<String, Object> cachedActivates = new ConcurrentHashMap<>(); 					// 可激活的ExtensionLoader
-Class<?> cachedAdaptiveClass;														// 自适应的实现
+Class<?> cachedAdaptiveClass;														// 自适应的扩展点实现（有且只有一个）
 String cachedDefaultName; 															// 默认实现的名称 
-ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>(); 	// 所有的扩展点别名和扩展点实体的集合
+ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>(); 	// 所有的扩展点别名和扩展点实例的集合
 ```
 
-通过这四种成员变量我们可以发现ExtensionLoader是一个很重的工厂类对象，再结合下面会讲到的扩展点自动注入，ExtensionLoader基本上实现了一个功能完备的扩展点IOC工厂。通过源码看看这个IOC工厂是怎么运行的，我们先以这一句代码为出发点来理解ExtensionLoader。
+通过这4个成员变量，可以看出ExtensionLoader是一个很重的工厂类对象，再结合下面会讲到的扩展点自动注入，ExtensionLoader基本上实现了一个功能完备的扩展点IOC工厂。通过源码看看这个IOC工厂是怎么运行的，我们先以这一句代码为出发点来理解ExtensionLoader。
 
 ```java
 // ExtensionLoader#getExtensionLoader
@@ -143,6 +143,7 @@ private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADE
 
 //ExtensionLoader#getExtensionLoader
 public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
+    // 接口类型不能为空
     if (type == null) {
         throw new IllegalArgumentException("Extension type == null");
     }
@@ -173,11 +174,12 @@ private final ExtensionFactory objectFactory;
 
 private ExtensionLoader(Class<?> type) {
    this.type = type;
-   objectFactory=(type==ExtensionFactory.class?null :ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+   objectFactory= (type == ExtensionFactory.class? null : 
+                   ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
 }
 ```
 
-我们可以看到基本上这里只是个工厂类的壳子，相应的扩展类并没有被加载，因为扩展点实现类的加载也是延迟的。至于这个ExtensionFactory，因为它本身也被标注为@SPI扩展点，在获取它的ExtensionLoader时也会来这里走一遭，所以在这里进行了特殊的判断，打断了循环。ExtensionFactory也是个工厂类，包含了一个接口，该接口用于获取一个扩展点的实现类。
+可以看到基本上这里只是个工厂类的壳子，相应的扩展类并没有被加载，因为扩展点实现类的加载也是延迟的。至于这个ExtensionFactory，因为它本身也被标注为@SPI扩展点，在获取它的ExtensionLoader时也会来这里走一遭，所以在这里进行了特殊的判断，打断了循环。ExtensionFactory也是个工厂类，包含了一个接口，该接口用于获取一个扩展点的实现类。
 
 ```java
  <T> T getExtension(Class<T> type, String name);
@@ -187,10 +189,10 @@ Dubbo会在自动注入扩展点时使用该方法，它一共有3个实现类�
 
 <img src=".images/1-20200514150040438.png" alt="ExtensionFactory.png" style="zoom:50%;" />
 
-在Dubbo中一般回直接使用AdaptiveExtensionFactory来获取扩展点实现类。
+在Dubbo中一般会直接使用AdaptiveExtensionFactory来获取扩展点实现类。
 
 ``` java
-// AdapttiveExtensionFactory 
+// AdaptiveExtensionFactory 
 public AdaptiveExtensionFactory() {
     ExtensionLoader<ExtensionFactory> loader = ExtensionLoader.getExtensionLoader(ExtensionFactory.class);
     List<ExtensionFactory> list = new ArrayList<ExtensionFactory>();
@@ -248,7 +250,7 @@ public <T> T getExtension(Class<T> type, String name) {
 
 ```
 
-> 讲到这里，可能会觉得ExtensionLoader和ExtensionFactory有些重复的感觉。可以理解为，ExtensionFactory是一个SPI加载机制的扩展点，可以将别的加载类的体系纳入到Dubbo SPI的这个模型， 从而实现和Dubbo框架的融合，方便Dubbo统一的进行扩展点的管理，而不用在代码中四处“打补丁”。而鉴于现在有且只有Spring的一种，如果在不使用Spring Bean的情况下，而且完全可以去除掉ExtensionFactory这个类。
+> 至此，可能会觉得ExtensionLoader和ExtensionFactory有些重复的感觉。可以理解为，ExtensionFactory是一个SPI加载机制的扩展点，可以将别的加载类的体系纳入到Dubbo SPI的这个模型， 从而实现和Dubbo框架的融合，方便Dubbo统一的进行扩展点的管理，而不用在代码中四处“打补丁”。而鉴于现在有且只有Spring的一种，如果在不使用Spring Bean的情况下，而且完全可以去除掉ExtensionFactory这个类。
 
 ## 扩展点的分类
 
