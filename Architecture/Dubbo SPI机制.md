@@ -8,9 +8,7 @@
 Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 ```
 
-这个ExtensionLoader就是Dubbo扩展能力的基础，也是理解Dubbo运行机制的基石，那么下面我们先来了解了解SPI是什么。
-
-
+这个ExtensionLoader就是Dubbo扩展能力的基础，也是理解Dubbo运行机制的基石，那么下面来了解了解SPI是什么。
 
 ## SPI机制
 
@@ -20,7 +18,7 @@ SPI(Service Provider Interface)，是一种服务发现机制，Dubbo的SPI是�
 > - 增加了对扩展点 IoC 和 AOP 的支持，一个扩展点可以直接 setter 注入其它扩展点。
 > - 如果扩展点加载失败，连扩展点的名称都拿不到了。比如：JDK 标准的 ScriptEngine，通过 `getName()` 获取脚本类型的名称，但如果 RubyScriptEngine 因为所依赖的 jruby.jar 不存在，导致 RubyScriptEngine 类加载失败，这个失败原因被吃掉了，和 ruby 对应不起来，当用户执行 ruby 脚本时，会报不支持 ruby，而不是真正失败的原因。
 
-其中第一点懒加载和第二点IOC是我们平时所熟知的，也是我个人认为比较重要的，至于第二点笔者也从未遇见过这样的场景。
+其中第一点懒加载和第二点IOC是比较熟知的，也是比较重要的；第三点几乎很少遇到。
 
 首先来看一个小小的Dubbo SPI的使用案例：
 
@@ -113,13 +111,11 @@ Transfer msg thorough TCP
 
 - 在**META-INF/dubbo**下的文件中，等号左边为扩展点的别名，等号右边为扩展点的实现类。
 
-- **Dubbo URL**相当于一次Dubbo调用的配置信息，是可变化的。
+- **Dubbo URL**：相当于一次Dubbo调用的配置信息，是可变化的。
 - **@Activate**：表明该扩展点是可被激活的扩展点，value为空表示默认激活，当value不为空时，则表示Dubbo URL中包含相关参数时才会激活。
-- **@Adaptive**可以被标注在类和方法上。
+- **@Adaptive**：可以被标注在类和方法上。
     - 标注方法时，表明Dubbo会对生成的代理类的该方法进行自适应拓展，会根据URL中的参数调用相应的扩展点的方法。从而实现在运行时动态的决定加载某一个扩展点。相当于代理模式和策略模式的一个结合。基本上，每一个扩展点都会被Dubbo生成一个相应的自适应扩展类。
-    - 标注在类上时，则表明Dubbo直接使用该类作为已实现自适应扩展的类，而不用Dubbo再自行生成。目前Dubbo有这么两个类被加上了@Adaptive注解：`AdaptiveCompiler`和`AdaptiveExtensionFactory`。
-
-
+    - 标注类时，则表明Dubbo直接使用该类作为已实现自适应扩展的类，而不用Dubbo再自行生成。目前Dubbo有这么两个类被加上了@Adaptive注解：`AdaptiveCompiler`和`AdaptiveExtensionFactory`。
 
 ## 扩展点的IOC工厂
 
@@ -132,14 +128,10 @@ static ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new Concu
 而在每个ExtensionLoader的每一个对象中维护着下面的四种成员变量：
 
 ``` java
-// 可激活的ExtensionLoader
-Map<String, Object> cachedActivates = new ConcurrentHashMap<>();
-// 自适应的实现
-Class<?> cachedAdaptiveClass;
-// 默认实现的名称 
-String cachedDefaultName;
-// 所有的扩展点别名和扩展点实体的集合
-ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
+Map<String, Object> cachedActivates = new ConcurrentHashMap<>(); 					// 可激活的ExtensionLoader
+Class<?> cachedAdaptiveClass;														// 自适应的实现
+String cachedDefaultName; 															// 默认实现的名称 
+ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>(); 	// 所有的扩展点别名和扩展点实体的集合
 ```
 
 通过这四种成员变量我们可以发现ExtensionLoader是一个很重的工厂类对象，再结合下面会讲到的扩展点自动注入，ExtensionLoader基本上实现了一个功能完备的扩展点IOC工厂。通过源码看看这个IOC工厂是怎么运行的，我们先以这一句代码为出发点来理解ExtensionLoader。
@@ -265,6 +257,7 @@ public <T> T getExtension(Class<T> type, String name) {
 - 普通扩展点实现默认扩展点实现
 - 自适应扩展点实现（有且仅有一个）
 - 可激活扩展点实现
+- 默认扩展点实现（零个或一个）
 - Wrapper扩展点实现
 
 一个扩展点的实现可能同时隶属于上面的一种或多种。
