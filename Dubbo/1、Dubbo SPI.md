@@ -12,7 +12,7 @@ SPI(Service Provider Interface)，是一种服务发现机制，Dubbo的SPI是�
 Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 ```
 
-这个ExtensionLoader就是Dubbo扩展能力的基础，也是理解Dubbo运行机制的基石，那么下面来了解和分析SPI是什么。首先看一下一个Dubbo SPI的案例
+这个ExtensionLoader就是Dubbo扩展能力的基础，也是理解Dubbo运行机制的基石，那么下面来了解和分析SPI是什么。先看一个Dubbo SPI的案例
 
 ```java
 /** 定义一个扩展点的接口 */
@@ -105,8 +105,6 @@ public void test() {
     Protocol protocol = (Protocol) loader.getExtension("dubbo");
 }
 ```
-
-
 
 ### 2.1、获取扩展加载器
 
