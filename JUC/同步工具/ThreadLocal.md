@@ -116,13 +116,19 @@ ThreadLocal本身支持范型。上面的案例使用了 StringBuilder 类型的
 
 ## 4、ThreadLocal 在 JDK 8 中的实现
 
+JDK中ThreadLocal实现原理与运行时图
+
+<img src=".images/image-20200516185254381.png" alt="image-20200516185254381" style="zoom:50%;" />
+
 ### 4.1、ThreadLocalMap与内存泄漏
 
-该方案中，Map 由 ThreadLocal 类的静态内部类 ThreadLocalMap 提供。该类的实例维护某个 ThreadLocal 与具体实例的映射。与 HashMap 不同的是，ThreadLocalMap 的每个 Entry 都是一个对 ***键\*** 的弱引用，这一点从`super(k)`可看出。另外，每个 Entry 都包含了一个对 ***值\*** 的强引用。
+- Map由ThreadLocal类的静态内部类ThreadLocalMap提供。该类的实例维护某个 ThreadLocal 与具体实例的映射。
+
+- 与 HashMap 不同的是，ThreadLocalMap 的每个 Entry 都是一个对 **键** 的弱引用。另外，每个 Entry 都包含了一个对**值** 的强引用。
 
 ```java
 static class Entry extends WeakReference<ThreadLocal<?>> {
-  /** The value associated with this ThreadLocal. */
+  /** 通过这个value属性建立所关联的ThreadLocal变量，它保存的就是ThreadLocal变量的引用 */
   Object value;
   Entry(ThreadLocal<?> k, Object v) {
     super(k);
@@ -131,55 +137,58 @@ static class Entry extends WeakReference<ThreadLocal<?>> {
 }
 ```
 
-使用弱引用的原因在于，当没有强引用指向 ThreadLocal 变量时，它可被回收，从而避免上文所述 ThreadLocal 不能被回收而造成的内存泄漏的问题。
-
-但是，这里又可能出现另外一种内存泄漏的问题。ThreadLocalMap 维护 ThreadLocal 变量与具体实例的映射，当 ThreadLocal 变量被回收后，该映射的键变为 null，该 Entry 无法被移除。从而使得实例被该 Entry 引用而无法被回收造成内存泄漏。
-
-***注：\***Entry虽然是弱引用，但它是 ThreadLocal 类型的弱引用（也即上文所述它是对 ***键\*** 的弱引用），而非具体实例的的弱引用，所以无法避免具体实例相关的内存泄漏。
+使用弱引用的原因在于，当没有强引用指向 ThreadLocal 变量时，它可被回收，从而避免上文所述 ThreadLocal 不能被回收而造成的内存泄漏的问题。但是，这里又可能出现另外一种内存泄漏的问题。ThreadLocalMap 维护 ThreadLocal 变量与具体实例的映射，当 ThreadLocal 变量被回收后，该映射的键变为 null，该 Entry 无法被移除。从而使得实例被该 Entry 引用而无法被回收造成内存泄漏。注：Entry虽然是弱引用，但它是 ThreadLocal 类型的弱引用（也即上文所述它是对 ***键\*** 的弱引用），而非具体实例的的弱引用，所以无法避免具体实例相关的内存泄漏。
 
 ### 4.2、读取实例
 
 读取实例方法如下所示
 
 ```java
+/**
+  * ThreadLocal#get()方法，获取放入的数据副本
+  */
 public T get() {
+    // 获取当前线程对象
   	Thread t = Thread.currentThread();
+    // 从当前线程对象中取出ThreadLocalMap映射信息
   	ThreadLocalMap map = getMap(t);
   	if (map != null) {
+        // 从当前线程维护的映射集合中取出与当前ThreadLocal的关联实体，this就是当前访问的ThreadLocal对象。
     	ThreadLocalMap.Entry e = map.getEntry(this);
+        //Entry不为null，就从中取出本线程对应的实例；否则会进入下面的setInitialValue()设置初始值
     	if (e != null) {
       		@SuppressWarnings("unchecked")
+            // 从实体中取出当前线程自身关联维护的值
       		T result = (T)e.value;
       		return result;
-    	}		
+    	}
   	}
-  return setInitialValue();
+    return setInitialValue();
 }
-```
 
-读取实例时，线程首先通过`getMap(t)`方法获取自身的 ThreadLocalMap。从如下该方法的定义可见，该 ThreadLocalMap 的实例是 Thread 类的一个字段，即由 Thread 维护 ThreadLocal 对象与具体实例的映射，这一点与上文分析一致。
-
-```java
 ThreadLocalMap getMap(Thread t) {
   return t.threadLocals;
 }
 ```
 
-获取到 ThreadLocalMap 后，通过`map.getEntry(this)`方法获取该 ThreadLocal 在当前线程的 ThreadLocalMap 中对应的 Entry。该方法中的 this 即当前访问的 ThreadLocal 对象。如果获取到的 Entry 不为 null，从 Entry 中取出值即为所需访问的本线程对应的实例。如果获取到的 Entry 为 null，则通过`setInitialValue()`方法设置该 ThreadLocal 变量在该线程中对应的具体实例的初始值。
+读取实例时，线程首先通过`getMap(t)`方法获取线程自身维护的 ThreadLocalMap。从ge tMap()方法可知ThreadLocalMap的实例是 Thread 类的一个属性，即由`Thread 维护 ThreadLocal 对象与具体实例的映射。`
 
 ### 4.3、设置初始值
 
 设置初始值方法如下
 
 ```java
-//该方法为 private 方法，无法被重载
+//该方法为private方法，无法被重载
 private T setInitialValue() {
   	T value = initialValue();
   	Thread t = Thread.currentThread();
+    // 从当前线程中获取与当前ThreadLocal变量关联的映射
   	ThreadLocalMap map = getMap(t);
+    //map不为空，就直接ThreadLocal对象和初始值的映射添加到当前线程ThreadLocalMap中维护。
   	if (map != null)
     	map.set(this, value);
   	else
+    //map为空，就直接创建新的映射关联
     	createMap(t, value);
   	return value;
 }
@@ -187,13 +196,11 @@ private T setInitialValue() {
 
 - 通过`initialValue()`方法获取初始值。该方法为public，且默认返回 null。典型用法中常常重载该方法。案例中在内部匿名类中将其重载。
 
-- 拿到该线程对应的 ThreadLocalMap 对象，若该对象不为 null，则直接将该 ThreadLocal 对象与对应实例初始值的映射添加进该线程的 ThreadLocalMap中。若为 null，则先创建该 ThreadLocalMap 对象再将映射添加其中。
-
-这里并不需要考虑 ThreadLocalMap 的线程安全问题。因为每个线程有且只有一个 ThreadLocalMap 对象，并且只有该线程自己可以访问它，其它线程不会访问该 ThreadLocalMap，也即该对象不会在多个线程中共享，也就不存在线程安全的问题。
+- 这里并不需要考虑 ThreadLocalMap的线程安全问题。因为每个线程有且只有一个 ThreadLocalMap 对象，并且只有该线程自己可以访问它，其它线程不会访问该 ThreadLocalMap，也即该对象不会在多个线程中共享，也就不存在线程安全的问题。
 
 ### 4.3、设置实例
 
-除了通过`initialValue()`方法设置实例的初始值，还可通过 set 方法设置线程内实例的值，如下所示。
+除了通过`initialValue()`方法设置实例的初始值，还可通过set方法设置线程内实例的值，如下所示。
 
 ```java
 public void set(T value) {
@@ -210,7 +217,7 @@ public void set(T value) {
 
 ### 4.4、防止内存泄漏
 
-对于已经不再被使用且已被回收的 ThreadLocal 对象，它在每个线程内对应的实例由于被线程的 ThreadLocalMap 的 Entry 强引用，无法被回收，可能会造成内存泄漏。针对该问题，ThreadLocalMap 的 set 方法中，通过 replaceStaleEntry 方法将所有键为 null 的 Entry 的值设置为 null，从而使得该值可被回收。另外，会在 rehash 方法中通过 expungeStaleEntry 方法将键和值为 null 的 Entry 设置为 null 从而使得该 Entry 可被回收。通过这种方式，ThreadLocal 可防止内存泄漏。
+对于已经不再被使用且已被回收的 ThreadLocal 对象，它在每个线程内对应的实例由于被线程的 ThreadLocalMap 的 Entry 强引用，无法被回收，可能会造成内存泄漏。针对该问题，ThreadLocalMap 的 set 方法中，通过 replaceStaleEntry 方法将所有键为null 的Entry的值设置为null，从而使得该值可被回收。会在 rehash 方法中通过 expungeStaleEntry 方法将键和值为null的Entry设置为null 从而使得该 Entry 可被回收。通过这种方式，ThreadLocal 可防止内存泄漏。
 
 ```java
 private void set(ThreadLocal<?> key, Object value) {
@@ -236,6 +243,10 @@ private void set(ThreadLocal<?> key, Object value) {
     }
 }
 ```
+
+避免内存泄漏：使用者手动调用ThreadLocal的remove函数，手动删除不再需要的ThreadLocal，防止内存泄露。
+
+
 
 ## 5、适用场景
 
