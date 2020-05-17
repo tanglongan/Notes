@@ -97,7 +97,7 @@ ThreadLocal本身支持范型。上面的案例使用了 StringBuilder 类型的
 
 既然每个访问ThreadLocal变量的线程都有自己的一个“本地”实例副本。一个可能的方案是ThreadLocal维护了一个Map，键是Thread，值是它在Thread内的实例。线程通过该ThreadLocal的get方法获取实例时，只要以线程为键，从Map中找到对应的实例即可。该方案如下：
 
-<img src=".images/VarMap.png" alt="VarMap" style="zoom: 33%;" />
+<img src="http://www.jasongj.com/img/java/threadlocal/VarMap.png" alt="ThreadLocal side Map" style="zoom:33%;" />
 
 该方案可满足上文提到的每个线程内一个独立备份的要求。每个新线程访问该 ThreadLocal 时，需要向 Map 中添加一个映射，而每个线程结束时，应该清除该映射。这里就有两个问题：
 
@@ -110,7 +110,7 @@ ThreadLocal本身支持范型。上面的案例使用了 StringBuilder 类型的
 
 如果该Map由 Thread 维护，从而使得每个Thread只访问自己的 Map，那就不存在多线程写的问题，也就不需要锁。该方案如下图所示。
 
-<img src=".images/ThreadMap.png" alt="ThreadMap" style="zoom:33%;" />
+<img src=".images/ThreadMap.png" alt="ThreadLocal side Map" style="zoom:33%;" />
 
 该方案虽然没有锁的问题，但是由于每个线程访问某 ThreadLocal 变量后，都会在自己的 Map 内维护该 ThreadLocal 变量与具体实例的映射，如果不删除这些引用（映射），则这些 ThreadLocal 不能被回收，可能会造成内存泄漏。后文会介绍 JDK 如何解决该问题。
 
@@ -118,7 +118,7 @@ ThreadLocal本身支持范型。上面的案例使用了 StringBuilder 类型的
 
 JDK中ThreadLocal实现原理与运行时图
 
-<img src=".images/image-20200516185254381.png" alt="image-20200516185254381" style="zoom:50%;" />
+<img src=".images/image-20200517113758506.png" alt="image-20200517113758506" style="zoom:33%;" />
 
 ### 4.1、ThreadLocalMap与内存泄漏
 
@@ -246,20 +246,20 @@ private void set(ThreadLocal<?> key, Object value) {
 
 避免内存泄漏：使用者手动调用ThreadLocal的remove函数，手动删除不再需要的ThreadLocal，防止内存泄露。
 
-
-
 ## 5、适用场景
 
-如上文所述，ThreadLocal 适用于如下两种场景
+- 如上文所述，ThreadLocal 适用于如下两种场景
+    - 每个线程需要有自己单独的实例。
+    - 实例需要在多个方法中共享，但不希望被多线程共享。
 
-- 每个线程需要有自己单独的实例。
-- 实例需要在多个方法中共享，但不希望被多线程共享。
+- 常见开源框架中有
+    - PageHelper 的PageInfo
+    - Dubbo的RpcConetxt
+    - 日志的MDC
+    - spring的声明式事务
+    - spring的RequestContextHolder
 
-第一，每个线程拥有自己实例，实现它的方式很多。例如可以在线程内部构建一个单独的实例。ThreadLocal 可以以非常方便的形式满足该需求。
-
-第二，可以在满足第一点（每个线程有自己的实例）的条件下，通过方法间引用传递的形式实现。ThreadLocal 使得代码耦合度更低，且实现更优雅。
-
-## 6、案例
+## 6、使用案例一
 
 对于 Java Web 应用而言，Session 保存了很多信息。很多时候需要通过 Session 获取信息，有些时候又需要修改 Session 的信息。一方面，需要保证每个线程有自己单独的 Session 实例。另一方面，由于很多地方都需要操作 Session，存在多方法共享 Session 的需求。如果不使用 ThreadLocal，可以在每个线程内构建一个 Session实例，并将该实例在多个方法间传递，如下所示。
 
@@ -333,7 +333,90 @@ public class SessionHandler {
 
 使用 ThreadLocal 改造后的代码，不再需要在各个方法间传递 Session 对象，并且也非常轻松的保证了每个线程拥有自己独立的实例。如果单看其中某一点，替代方法很多。比如可通过在线程内创建局部变量可实现每个线程有自己的实例，使用静态变量可实现变量在方法间的共享。但如果要同时满足变量在线程间的隔离与方法间的共享，ThreadLocal再合适不过。
 
-## 7、总结
+
+
+## 7、使用案例二
+
+**最典型的是管理数据库的Connection：**当时在学JDBC的时候，为了方便操作写了一个简单数据库连接池，需要数据库连接池的理由也很简单，频繁创建和关闭Connection是一件非常耗费资源的操作，因此需要创建数据库连接池。那么，数据库连接池的连接怎么管理呢？？我们交由ThreadLocal来进行管理。为什么交给它来管理呢？？ThreadLocal能够实现**当前线程的操作都是用同一个Connection，保证了事务！**
+
+```java
+public class DBUtil {
+    //数据库连接池
+    private static BasicDataSource source;
+    //为不同的线程管理连接
+    private static ThreadLocal<Connection> local;
+    static {
+        try {
+            //1、加载配置文件
+            Properties properties = new Properties();
+            //2、获取读取流
+            InputStream stream = DBUtil.class.getClassLoader().getResourceAsStream("连接池/config.properties");
+            //3、从配置文件中读取数据
+            properties.load(stream);
+            //4、关闭流
+            stream.close();
+            //5、初始化连接池
+            source = new BasicDataSource();
+            //6、设置驱动
+            source.setDriverClassName(properties.getProperty("driver"));
+            //7、设置url
+            source.setUrl(properties.getProperty("url"));
+            //8、设置用户名
+            source.setUsername(properties.getProperty("user"));
+            //9、设置密码
+            source.setPassword(properties.getProperty("pwd"));
+            //10、设置初始连接数量
+            source.setInitialSize(Integer.parseInt(properties.getProperty("initsize")));
+            //11、设置最大的连接数量
+            source.setMaxActive(Integer.parseInt(properties.getProperty("maxactive")));
+            //12、设置最长的等待时间
+            source.setMaxWait(Integer.parseInt(properties.getProperty("maxwait")));
+            //13、设置最小空闲数
+            source.setMinIdle(Integer.parseInt(properties.getProperty("minidle")));
+            //14、初始化线程本地
+            local = new ThreadLocal<>();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        if(local.get()!=null){
+            return local.get();
+        } else {
+          //1、获取Connection对象
+          Connection connection = source.getConnection();
+          //2、把Connection放进ThreadLocal里面
+          local.set(connection);
+          //3、返回Connection对象
+          return connection;
+       }
+    }
+
+    //关闭数据库连接
+    public static void closeConnection() {
+        //从线程中拿到Connection对象
+        Connection connection = local.get();
+        try {
+            if (connection != null) {
+                //恢复连接为自动提交
+                connection.setAutoCommit(true);
+                //这里不是真的把连接关了,只是将该连接归还给连接池
+                connection.close();
+                //既然连接已经归还给连接池了,ThreadLocal保存的Connction对象也已经没用了
+                local.remove();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        // finally 这里也需要关闭 connection 和 remove  local
+    }
+}
+```
+
+同样的，Hibernate对Connection的管理也是采用了相同的手法。
+
+## 8、总结
 
 > - ThreadLocal 并不解决线程间共享数据的问题
 > - ThreadLocal 通过隐式的在不同线程内创建独立实例副本避免了实例线程安全的问题
