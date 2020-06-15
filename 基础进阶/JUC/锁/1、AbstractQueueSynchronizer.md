@@ -1,4 +1,6 @@
-AbstractQueueSynchronizer同步器为提供了一个FIFO队列，用于构建锁或其他组件提供了基础框架，简称为AQS。AQS是Java并发包的基础工具类，是构建ReentrantLock、CountDownLatch、Semaphore、FutureTask等工具的基础组件。
+AbstractQueueSynchronizer同步器内部使用了一个FIFO队列，为构建锁或其他同步组件提供了基础框架，简称为AQS。
+
+AQS是Java并发包的基础工具类，是构建ReentrantLock、CountDownLatch、Semaphore、FutureTask等工具的基础组件。
 
 ## AQS结构
 
