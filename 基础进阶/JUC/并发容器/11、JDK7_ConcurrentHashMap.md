@@ -259,16 +259,12 @@ private void rehash(HashEntry<K,V> node) {
         HashEntry<K,V> e = oldTable[i];
         if (e != null) {
             HashEntry<K,V> next = e.next;
-            // 计算应该放置在新数组中的位置
-            // 假设原数组长度为16，e在oldTable[3]处，那么idx只可能是3或者是19（3 + 16）
-            int idx = e.hash & sizeMask;
-            if (next == null)   // 该位置处只有一个元素
+            int idx = e.hash & sizeMask;// 计算应该放置在新数组中的位置
+            if (next == null)   		// 该位置处只有一个元素
                 newTable[idx] = e;
             else {
-                //e是链表表头
                 HashEntry<K,V> lastRun = e;
-                //idx是当前链表的头结点e的新位置
-                int lastIdx = idx;
+                int lastIdx = idx; //idx是当前链表的头结点e的新位置
                 // 下面这个for循环会找到一个lastRun节点，这个节点之后的所有元素是将要放到一起的
                 for (HashEntry<K,V> last = next; last != null; last = last.next) {
                     int k = last.hash & sizeMask;
@@ -277,7 +273,7 @@ private void rehash(HashEntry<K,V> node) {
                         lastRun = last;
                     }
                 }
-                // 将 lastRun 及其之后的所有节点组成的子链表放到 lastIdx 这个位置
+                // 将 lastRun下标处及其之后的所有节点组成的子链表放到lastIdx这个位置
                 newTable[lastIdx] = lastRun;
                 // 下面的操作是处理 lastRun 之前的节点，
                 // 这些节点可能分配在另一个链表中，也可能分配到上面的那个链表中

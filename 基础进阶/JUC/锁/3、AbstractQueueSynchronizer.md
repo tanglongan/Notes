@@ -442,9 +442,7 @@ if (acquireQueued(node, savedState) && interruptMode != THROW_IE){
 }
 ```
 
-这里的acquireQueued()方法的第一个参数node经过之前的enq(node)方法已经进入了队列中，参数savedState之前释放锁的个数state，这个方法返回的时候代表了线程已经获取了锁，而且state==savedState。
-
-前面说过，不管有没有发生中断，节点都会进入同步队列中，acquireQueued(node , saveStated)方法的返回值代表了线程是否被中断。如果返回true，说明被中断了，而且interrunptMode != THROW_IE，说明了signal之前就发生了中断，因此这里将interruptMode设置为REINTERRUPT，用于待会儿重新中断。主流程继续向下走：
+这里的acquireQueued()方法的第一个参数node经过之前的enq(node)方法已经进入了队列中，参数savedState之前释放锁的个数state，这个方法返回的时候代表了线程已经获取了锁，而且state==savedState。前面说过，不管有没有发生中断，节点都会进入同步队列中，acquireQueued(node , saveStated)方法的返回值代表了线程是否被中断。如果返回true，说明被中断了，而且interrunptMode != THROW_IE，说明了signal之前就发生了中断，因此这里将interruptMode设置为REINTERRUPT，用于待会儿重新中断。主流程继续向下走：
 
 ```java
 /**
