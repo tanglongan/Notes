@@ -93,7 +93,7 @@ public class OrderService {
 }
 ```
 
-ReentrantLock在内部使用内部类Sync来管理锁，所以真正的获取锁和释放锁都是通过Sync来控制的。
+ReentrantLock类中通过内部类Sync来实现锁的机制，所以真正的获取锁和释放锁都是通过Sync来控制的。
 
 ```java
 abstract static class Sync extends AbstractQueuedSynchronizer {
