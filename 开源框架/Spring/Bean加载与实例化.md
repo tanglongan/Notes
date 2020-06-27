@@ -45,13 +45,7 @@ helloBean.sayHello();
 - **初始化**。调用自定义的初始化方法
 - **获取最终的bean**。如果是FactoryBean需要调用getObject方法；如果需要类型转化，需要调用TypeConvertor进行转化
 
-### 2.2、细节分析
-
-#### 2.2.1、转化beanName
-
-
-
-### 2.3、
+### 
 
 
 

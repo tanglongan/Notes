@@ -1,12 +1,12 @@
 ## 1、ThreadLocal是什么
 
-ThreadLocal是一个创建线程局部变量的类。
+ThreadLocal是一个在多线程环境下变量共享访问的类
 
-> ThreadLocal 提供了线程本地的实例。它与普通变量的区别在于，每个使用该变量的线程都会初始化一个完全独立的实例副本。ThreadLocal 变量通常被`private static`修饰。当一个线程结束时，它所使用的所有 ThreadLocal 相对的实例副本都可被回收。
-
-通常情况下，程序中创建的变量是可以被任何一个线程访问和修改的。使用ThreadLocal创建的变量只能被当前线程访问，其他线程则无法访问和修改。ThreadLocal变量的基本原理是，同一个ThreadLocal所包含的对象在不同的Thread中有不同的副本。
-
-总的来说，**ThreadLocal 适用于每个线程需要自己独立的实例且该实例需要在多个方法中被使用，也即变量在线程间隔离而在方法或类间共享的场景。**另外，该场景下，并非必须使用 ThreadLocal ，其它方式完全可以实现同样的效果，只是 ThreadLocal 使得实现更简洁。
+> `作用`：ThreadLocal 用于每个线程需要自己独立的实例且该实例需要在多个方法中被使用，即**变量在线程间隔离而在方法或类间共享的场景**。
+>
+> `场景`：使变量在每个线程中都有独立拷贝，线程之间互不干扰的场景。最常见ThreadLocal使用场景有：解决数据库连接、Session管理等
+>
+> `用法`：ThreadLocal 变量通常被**private static**修饰。当一个线程结束时，它所使用的ThreadLocal对象中对应的副本变量都可被回收。
 
 ## 2、ThreadLocal用法
 

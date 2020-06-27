@@ -4,6 +4,15 @@ ThreadLocal是一个线程本地变量，也就意味着这个变量是线程独
 - ThreadLocal是每个线程都有一个数据副本，不需要加锁；ThreadLocal是典型的空间换时间的方式
 - 它们的使用场景不一样，关键是看关注的资源是多线程之间共享的还是单线程内部独享的。
 
+## 0、ThreadLocal方法
+
+ThreadLocal有4个方法
+
+- public T get() { }：获取ThreadLocal在当前线程中保存的变量副本
+- public void set(T value) { }：将变量作为副本数据，保存在当前线程的ThreadLocalMap中
+- public void remove() { }：移除当前线程中变量的副本，加快GC回收
+- protected T initialValue(){ }：protected方法，一般是用来在使用时进行重写的
+
 ## 1、使用案例
 
  ```java
