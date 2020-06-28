@@ -96,7 +96,7 @@ void addEntry(int hash, K key, V value, int bucketIndex) {
 }
 
 /**
- * 在数组的指定位置处，将实体插入到链接的表头，集合中中实体个数加1
+ * 在数组的指定位置处，将实体插入到链接的表头，数据实体个数加1
  */
 void createEntry(int hash, K key, V value, int bucketIndex) {
     Entry<K,V> e = table[bucketIndex];

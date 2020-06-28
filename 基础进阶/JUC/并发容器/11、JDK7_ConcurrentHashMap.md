@@ -4,7 +4,7 @@ ConcurrentHashMap 和 HashMap 思路是差不多的，但是因为它支持并�
 
 简单的来说
 
-ConcurrentHashMap 是一个 Segment 数组，`Segment 通过继承 ReentrantLock 来进行加锁，所以每次需要加锁的操作锁住的是一个 segment`，这样只要保证每个 Segment 是线程安全的，也就实现了全局的线程安全。
+ConcurrentHashMap 是一个 Segment 数组，`Segment通过继承ReentrantLock来进行加锁，所以每次需要加锁的操作锁住的是一个segment`，这样只要保证每个 Segment 是线程安全的，也就实现了全局的线程安全。
 
 <img src=".images/20200413220846.png" alt="image-20200413171901906" style="zoom:30%;" />
 
@@ -34,7 +34,7 @@ public ConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyL
     
     //此处分析时，暂时只考虑用默认值，concurrencyLevel为16，sshift为4
     //那么计算出segmentShift为28，segmentMask为15，其他方法中计算位置时会使用到这两个值
-    this.segmentShift = 32 - sshift; //将来hashCode值的二进制向右移动的位数，移动后hashCode的的高4位和下面的掩码做与运算
+    this.segmentShift = 32 - sshift;//将来hashCode值的二进制向右移动的位数，移动后hashCode的高4位和下面的掩码做与运算
     this.segmentMask = ssize - 1;	 //掩码值
     if (initialCapacity > MAXIMUM_CAPACITY){
         initialCapacity = MAXIMUM_CAPACITY;
@@ -46,7 +46,7 @@ public ConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyL
     if (c * ssize < initialCapacity){
         ++c;
     }
-    //默认MIN_SEGMENT_TABLE_CAPACITY是2，这个值也有讲究的，因为这样的话，对于具体的槽上，插入一个元素不扩容，插入第二个才会扩容
+    //默认MIN_SEGMENT_TABLE_CAPACITY是2，这个值也有讲究的，对于具体的槽上，插入一个元素不扩容，插入第二个才会扩容
     int cap = MIN_SEGMENT_TABLE_CAPACITY; 
     while (cap < c){
         cap <<= 1;
