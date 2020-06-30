@@ -2,9 +2,7 @@
 
 ConcurrentHashMap 和 HashMap 思路是差不多的，但是因为它支持并发操作，所以要复杂一些。整个 ConcurrentHashMap 由一个个 Segment 组成，Segment 代表”部分“或”一段“的意思，所以很多地方都会将其描述为**分段锁**，也可以称为“**槽**”。
 
-简单的来说
-
-ConcurrentHashMap 是一个 Segment 数组，`Segment通过继承ReentrantLock来进行加锁，所以每次需要加锁的操作锁住的是一个segment`，这样只要保证每个 Segment 是线程安全的，也就实现了全局的线程安全。
+简单的来说ConcurrentHashMap 是一个 Segment 数组，`Segment通过继承ReentrantLock来进行加锁，所以每次需要加锁的操作锁住的是一个segment`，这样只要保证每个 Segment 是线程安全的，也就实现了全局的线程安全。
 
 <img src=".images/20200413220846.png" alt="image-20200413171901906" style="zoom:30%;" />
 
@@ -237,7 +235,7 @@ private HashEntry<K,V> scanAndLockForPut(K key, int hash, V value) {
 
 ### 6、扩容rehash
 
-`segment 数组不能扩容，扩容是segment 数组某个位置内部的数组 HashEntry<K,V>[] 进行扩容`，扩容后容量为原来的2 倍。首先，我们要回顾一下触发扩容的地方，put 的时候，如果判断该值的插入会导致该 segment 的元素个数超过阈值，那么先进行扩容，再插值，可以回去 put 方法看一眼。该方法不需要考虑并发，因为到这里的时候，是持有该 segment 的独占锁的。
+`segment数组不能扩容，扩容是segment数组某个位置内部的数组HashEntry<K,V>[] 进行扩容`，扩容后容量为原来的2 倍。首先，我们要回顾一下触发扩容的地方，put 的时候，如果判断该值的插入会导致该 segment 的元素个数超过阈值，那么先进行扩容，再插值，可以回去 put 方法看一眼。该方法不需要考虑并发，因为到这里的时候，是持有该 segment 的独占锁的。
 
 ```java
 /**

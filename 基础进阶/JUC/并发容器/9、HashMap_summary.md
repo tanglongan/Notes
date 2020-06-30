@@ -175,7 +175,7 @@ void transfer(Entry[] newTable, boolean rehash) {
 1. 线程二的开始点是只获取到A节点, 还没获取它的next节点
 2. 这时候线程一resize完成, a.next = null;   b.next = a;   newTable[i] = b;
 3. 线程二开始执行, 获取A节点的next节点, a.next = null;
-4. 接着执行 a.next = newTable[i]; 因为这时候newTable[i]已经是B节点了, 并且b.next = a; 那么我们把newTablei赋值给a.next后, 就会线程a-b-a这样的环  形链表了, 也就是上图的结果;
+4. 接着执行 a.next = newTable[i]; 因为这时候newTable[i]已经是B节点了, 并且b.next = a; 那么我们把newTable赋值给a.next后, 就会线程a-b-a这样的环  形链表了, 也就是上图的结果;
 5. 因为第三步的a.next已经是null, 所以C节点就丢失了;
 6. 那这时候来查位于1节点的数据D(其实不存在), 因为 d != a, 会接着查a.next, 也就是b; 但是b != d, 所以接着查b.next, 但是b.next还是a; 这就悲剧了, 在循环里出不去了;
 
