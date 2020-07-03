@@ -228,7 +228,7 @@ public final class SpringFactoriesLoader {
 }
 ```
 
-Spring Boot在启动的时候从类路径下的META-INF/spring.factories中获取EnableAutoConfiguration指定的值，将这些值作为自动配置类导入到容器中，自动配置类就生效，帮我们进行自动配置工作。原来我们需要自己配置的东西，自动配置类都帮我们完成了。
+Spring Boot在启动的时候`从类路径下的META-INF/spring.factories中获取EnableAutoConfiguration指定的值，将这些值作为自动配置类导入到容器中，自动配置类就生效，帮我们进行自动配置工作`。原来我们需要自己配置的东西，自动配置类都帮我们完成了。
 
 <img src=".images/image-20200626125846936.png" alt="image-20200626125846936" style="zoom:50%;" />
 
