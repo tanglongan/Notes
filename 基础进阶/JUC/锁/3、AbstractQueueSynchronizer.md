@@ -139,6 +139,7 @@ addConditionWaiter()方法是将节点加入到条件队列中，Condition的条
  * 将当前线程的节点加入到队列尾部
  */
 private Node addConditionWaiter() {
+    //获取条件队列最后一个节点
     Node t = lastWaiter;
     //如果条件队列中最后一个节点被取消了
     if (t != null && t.waitStatus != Node.CONDITION) {
@@ -284,12 +285,13 @@ while (!isOnSyncQueue(node)) {
  * 节点移动到同步队列之后会设置waitStatus = 0
  */
 final boolean isOnSyncQueue(Node node) {
-    //waitStatus = Node.CONDITION，说明仍然在条件队列中
-    //节点的prev的，肯定没有在阻塞队列
+    //有2种条件下，节点是不在阻塞队列上的
+    //（1）等待状态是Node.CONDITION
+    //（2）节点的prev为null，肯定没有在阻塞队列
     if (node.waitStatus == Node.CONDITION || node.prev == null){
         return false;
     }
-    //如果节点的next引用不为空，说明在同步队列中
+    //如果节点的next引用不为空，说明在阻塞队列中
     if (node.next != null) {
         return true;
     }
@@ -298,7 +300,7 @@ final boolean isOnSyncQueue(Node node) {
 }
 
 /**
- * 在同步队列中从后向前遍历，如果找到就返回true
+ * 在阻塞队列中从后向前遍历，如果找到就返回true
  */
 private boolean findNodeFromTail(Node node) {
     Node t = tail;
@@ -324,7 +326,7 @@ public final void signal() {
     if (!isHeldExclusively()){
         throw new IllegalMonitorStateException();
     }
-    
+    //唤醒的时候，都是唤醒条件队列中首节点
     Node first = firstWaiter;
     if (first != null){
         doSignal(first);

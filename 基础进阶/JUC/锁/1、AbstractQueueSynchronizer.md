@@ -1,25 +1,19 @@
-AbstractQueueSynchronizer同步器内部使用了一个FIFO队列，为构建锁或其他同步组件提供了基础框架，简称为AQS。
-
-AQS是Java并发包的基础工具类，是构建ReentrantLock、CountDownLatch、Semaphore、FutureTask等工具的基础组件。
+> - `AbstractQueueSynchronizer`同步器内部使用了一个FIFO队列，`为构建锁或其他同步组件提供了基础框架`，简称为AQS。
+>
+> - AQS是Java并发包的基础工具类，是构建ReentrantLock、CountDownLatch、Semaphore、FutureTask等工具的基础组件。
 
 ## AQS结构
 
 先看一下AQS的属性
 
 ```java
-// 头结点，你直接把它当做 当前持有锁的线程 可能是最好理解的
+// 头节点，可以直接把它当做当前持有锁的线程
 private transient volatile Node head;
-
 // 阻塞的尾节点，每个新的节点进来，都插入到最后，也就形成了一个链表
 private transient volatile Node tail;
-
-// 核心属性，代表当前锁的状态，0：没有被占用，大于0：有线程持有当前锁
-// 这个值可以大于 1，是因为锁可以重入，每次重入都加上 1
+// 同步状态，代表当前锁的状态，0：没有被占用，大于0：有线程持有当前锁
 private volatile int state;
-
-// 代表当前持有独占锁的线程，举个最重要的使用例子，因为锁可以重入
-// reentrantLock.lock()可以嵌套调用多次，所以每次用这个来判断当前线程是否已经拥有了锁
-// if (currentThread == getExclusiveOwnerThread()) {state++}
+// 代表当前持有独占锁的线程
 private transient Thread exclusiveOwnerThread; 
 ```
 
@@ -217,10 +211,12 @@ static final class FairSync extends Sync {
     }
     
     /**
-     * 当前节点已经入队，线程进入阻塞等待（自旋）直到获取到锁为止
+     * 当前节点已经入队，线程被阻塞，直到被前驱节点唤醒
      * 自旋过程做了两件事：
      * 1、判断如果当前节点是队列首节点并且尝试获取锁成功，就结束自旋返回
      * 2、如果当前线程节点不是队列首节点，就检查是否线程的中断状态
+     * 注意：阻塞线程是在当前线程入队后使用LockSupport.park()方法；
+     *      唤醒线程是由前驱节点通过LockSupport.unpark(Thread t)方法“精准唤醒”的。
      */
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
@@ -237,8 +233,7 @@ static final class FairSync extends Sync {
                     return interrupted;
                 }
                 
-                if (shouldParkAfterFailedAcquire(p,node) 
-                    && parkAndCheckInterrupt()){
+                if (shouldParkAfterFailedAcquire(p,node) && parkAndCheckInterrupt()){
                     interrupted = true;
                 } 
             }
@@ -256,15 +251,15 @@ static final class FairSync extends Sync {
      */
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         int ws = pred.waitStatus;
-        //前置节点的状态为-1，即前置节点正常，当前节点需要挂起
+        //前置节点的状态为-1，即前置节点正常，当前节点的"线程被阻塞，等待被唤醒"
         if (ws == Node.SIGNAL){
             return true;
         }
-        //前置节点同步状态大于0，即CANCELLED，说明前置节点线程取消了排队
-        //需要说明的是阻塞队列中的线程会被挂起，而唤醒操作是由前置节点完成的
+        //前置节点同步状态大于0，即CANCELLED，说明前置节点线程取消了“等待获取锁的操作”
+        //需要说明的是阻塞队列中的线程会被挂起，而唤醒操作是由前置节点完成的，这个是非常关键的一点！！！
         if (ws > 0) {
             //下面循环是将当前节点prev指向 waitStatus< 0的节点。
-            //为了找一个好爹，因为还要依赖好爹唤醒它，向前遍历找到好爹为止
+            //为了找一个好老大，因为还要依赖好老大唤醒它，向前遍历找到“正常状态节点”为止
             do {
                 node.prev = pred = pred.prev;
             } while (pred.waitStatus > 0);
@@ -279,11 +274,12 @@ static final class FairSync extends Sync {
     }
     
     /**
-     * 阻塞当前线程 
+     * 阻塞当前线程
      * 当shouldParkAfterFailedAcquire返回true，也就是需要挂起当前线程的时候调用
      */
     private final boolean parkAndCheckInterrupt() {
         //阻塞当前线程，然后停在这里，等待被唤醒
+        //唤醒是由它的前驱节点释放锁方法时，在unparkSuccessor方法中通过LockSupport.unpark(t)方法，“明确指定”地唤醒它
         LockSupport.park(this);
         return Thread.interrupted();
     }
@@ -391,7 +387,7 @@ static void selfInterrupt() {
 
 ## 示意图解析
 
-首先，第一个线程调用 reentrantLock.lock()，翻到最前面可以发现，tryAcquire(1) 直接就返回 true 了，结束。只是设置了 state=1，连 head 都没有初始化，更谈不上什么阻塞队列了。要是线程 1 调用 unlock() 了，才有线程 2 来，那世界就太太太平了，完全没有交集嘛，那我还要 AQS 干嘛。如果线程 1 没有调用 unlock() 之前，线程 2 调用了 lock(), 想想会发生什么？线程 2 会初始化 head (即new Node( ))，同时线程 2 也会插入到阻塞队列并挂起 (注意看这里是一个 for 循环，而且设置 head 和 tail 的部分是不 return 的，只有入队成功才会跳出循环)
+首先，第一个线程调用 reentrantLock.lock()，翻到最前面可以发现，tryAcquire(1) 直接就返回 true 了，结束。只是设置了 state=1，连 head 都没有初始化，更谈不上什么阻塞队列了。要是线程 1 调用 unlock() 了，才有线程 2 来，那世界太美好了，完全没有交集嘛，那我还要 AQS 干嘛。如果线程 1 没有调用 unlock() 之前，线程 2 调用了 lock(), 想想会发生什么？线程 2 会初始化 head (即new Node( ))，同时线程 2 也会插入到阻塞队列并挂起 (注意看这里是一个 for 循环，而且设置 head 和 tail 的部分是不 return 的，只有入队成功才会跳出循环)
 
 ```java
 private Node enq(final Node node) {
@@ -419,7 +415,7 @@ private Node enq(final Node node) {
 
 <img src=".images/20200410231414.png" alt="image-20200408230821380" style="zoom: 25%;" />
 
-同时我们也要看此时节点的 waitStatus，我们知道 head 节点是线程 2 初始化的，此时的 waitStatus 没有设置， java 默认会设置为 0，但是到 shouldParkAfterFailedAcquire 这个方法的时候，线程 2 会把前驱节点，也就是 head 的waitStatus设置为 -1。那线程 2 节点此时的 waitStatus 是多少呢，由于没有设置，所以是 0；如果线程 3 此时再进来，直接插到线程 2 的后面就可以了，此时线程 3 的 waitStatus 是 0，到 shouldParkAfterFailedAcquire 方法的时候把前驱节点线程 2 的 waitStatus 设置为 -1。
+同时我们也要看此时节点的 waitStatus，由于 head 节点是线程 2 初始化的，此时的 waitStatus 没有设置， java 默认会设置为 0，但是到 shouldParkAfterFailedAcquire 这个方法的时候，线程 2 会把前驱节点，也就是 head 的waitStatus设置为 -1。那线程 2 节点此时的 waitStatus 是多少呢，由于没有设置，所以是 0；如果线程 3 此时再进来，直接插到线程 2 的后面就可以了，此时线程 3 的 waitStatus 是 0，到 shouldParkAfterFailedAcquire 方法的时候把前驱节点线程 2 的 waitStatus 设置为 -1。
 
 <img src=".images/20200410232923.png" alt="image-20200408230908841" style="zoom: 25%;" />
 
