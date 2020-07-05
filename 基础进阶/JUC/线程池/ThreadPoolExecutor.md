@@ -7,7 +7,7 @@
 - AbstractExecutorService：抽象类，这里提供了很多非常有用的方法供子类直接使用。
 - ThreadPoolExecutor：线程池实现类，核心重点
 
-- 线程池的实现还涉及到了如下的类。由于线程池支持获取线程执行结果，所以引入了Future接口，RunnableFuture接口继承了它，最重要的是其实现类FutureTask。线程池的使用过程是往线程池中提交任务（Task），提交的任务是实现了runnable接口的，实际上是将Runnable的任务包装成了FutureTask，然后再提交到线程池中。FutureTask类就是一个任务（Task），具有Future接口语义，即可以在将来获取执行结果。
+- 线程池的实现还涉及到了如下的类。由于线程池支持获取线程执行结果，所以引入了Future接口，RunnableFuture接口继承了它，最重要的是其实现类FutureTask。``线程池的使用过程是往线程池中提交任务（Task），提交的任务是实现了Runnable接口，实际上是将Runnable的任务包装成了FutureTask，然后再提交到线程池中。``FutureTask类就是一个任务（Task），具有Future接口语义，即可以在将来获取执行结果。
 
     <img src=".images/20200412000551.png" alt="image-20200411233706745" style="zoom:40%;" />
 
@@ -22,9 +22,7 @@ public interface Executor {
 }
 ```
 
-Doug Lea在这个接口的源码注释中做了一些概述如下：
-
-以往我们使用线程的方式
+Doug Lea在这个接口的源码注释中做了一些概述如下：以往我们使用线程的方式
 
 ```java
 new Thread(new Runnable(){
@@ -97,7 +95,7 @@ class SerialExecutor implements Executor {
  }
 ```
 
-Executor 这个接口只有提交任务功能，太简单了，我们想要更丰富的功能，比如我们想知道执行结果、我们想知道当前线程池有多少个线程活着、已经完成了多少任务等等，这些都是这个接口的不足的地方。接下来我们要介绍的是继承自 `Executor` 接口的 `ExecutorService` 接口，这个接口提供了比较丰富的功能，也是我们最常使用到的接口。
+Executor 这个接口只有提交任务功能，太简单了，想要更丰富的功能，比如想获取执行结果、想知道当前线程池有多少个线程活着、已经完成了多少任务等等，这些都是这个接口的不足的地方。接下来我们要介绍的是继承自 `Executor` 接口的 `ExecutorService` 接口，这个接口提供了比较丰富的功能，也是我们最常使用到的接口。
 
 ## ExecutorService接口
 
@@ -131,13 +129,11 @@ public interface ExecutorService extends Executor {
 	//执行所有任务，返回Future类型的列表
     <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException;
 	//执行所有任务，返回Future类型的列表，可以设置超时功能
-    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit)
-        throws InterruptedException;
+    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit);
 	//只要其中一个任务执行了，就可以返回，并返回那个任务的结果
     <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException;
 	//只要其中一个任务执行了，就可以返回，并返回那个任务的结果，可以设置超时功能
-    <T> T invokeAny(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit)
-        throws InterruptedException, ExecutionException, TimeoutException;
+    <T> T invokeAny(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit);
 }
 
 ```
@@ -165,6 +161,11 @@ public interface Callable<V> {
 ## AbstractExecutorService抽象类
 
 AbstractExecutorService是ExecutorService的抽象实现。实现了几个实用的方法，提供给子类调用。这个抽象类实现了 invokeAny 方法和 invokeAll 方法，这里的两个 newTaskFor 方法也比较有用，用于将任务包装成 FutureTask。定义于最上层接口 Executor中的 `void execute(Runnable command)` 由于不需要获取结果，不会进行 FutureTask 的包装。`需要获取结果（FutureTask），用 submit 方法，不需要获取结果，可以用 execute 方法。`
+
+- invokeAny()：执行任务
+- invokeAll()：执行任务
+- newTaskFor()：用于将Runnable或Callable任务包装成FutureTask类型的任务
+- submit()：提交任务
 
 ## ThreadPoolExecutor线程池类
 
