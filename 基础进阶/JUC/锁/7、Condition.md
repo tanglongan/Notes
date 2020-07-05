@@ -1,28 +1,29 @@
 ### Condition接口
 
-任何一个Java对象都用于一组监视器方法（定义在java.lang.Object）主要包含了wait( )、wait( long timeout)、notify( )、notifyAll( )方法这些方法可以与synchronized同步关键字配合，可以实现等待/通知模式。Condition接口也提供了类似Object的监视器方法，与Lock搭配使用可以实现等待/通知模式。两者在使用方式和功能特性都有一些差异。
+> - Java所有对象包含了wait( )、wait( long)、notify( )、notifyAll( )方法这些方法可以与synchronized同步关键字配合，可以实现等待/通知模式。
+> - Condition接口也提供了类似Object的监视器方法，与Lock搭配使用可以实现等待/通知模式。两者在使用方式和功能特性都有一些差异。
 
 Object方式是Java语言底层提供的，Lock/Condition是语言级别提供的，具有更高的可控制性和扩展性。
 
-- Condition支持响应中断，而Object方式不支持
-- Condition能够支持多个等待队列，Object只能支持一个
-- Condition能够支持超时时间的设置，Object不支持
+- **Condition支持响应中断，而Object方式不支持**
+- **Condition能够支持多个等待队列，Object只能支持一个**
+- **Condition能够支持超时时间的设置，Object不支持**
 
 ### Condition的实现分析
 
-- Condition定义了等待/通知两种类型的方法，当前线程调用这些方法的时候，需要提前获取到Condition对象关联的锁。
-- Condition对象依赖于Lock的，可多次调用lock.newCondition()创建多个Condition，而每个Condition都有自己的等待队列。
-- ConditionObject是Condition接口的实现类，是AQS的内部类。ConditionObject主要包括等待队列、等待和通知。
+- **Condition定义了等待/通知两种类型的方法，当前线程调用这些方法的时候，需要提前获取到Condition对象关联的锁。**
+- **Condition对象依赖于Lock的，可多次调用lock.newCondition()创建多个Condition，而每个Condition都有自己的等待队列。**
+- **ConditionObject是Condition接口的实现类，是AQS的内部类。ConditionObject主要包括等待队列、等待和通知。**
 
 以下提到的Condition在不加说明的情况下都指的是ConditionObject。
 
 #### 1、等待队列
 
-- 在锁机制的实现上，AQS内部维护了一个同步队列，如果是独占式锁的话，所有获取锁失败的线程都会被构建成节点添加到队列尾部，其队列首节点表示成功获取同步状态的节点。类似地，Condition内部也维护了一个队列来为等待线程，这个队列称为等待队列。
+- 在锁机制的实现上，AQS内部维护了一个同步队列，如果是独占式锁的话，所有获取锁失败的线程都会被构建成节点添加到队列尾部，其队列首节点表示成功获取同步状态的节点。类似地，Condition内部也维护了一个队列来管理等待线程，这个队列称为条件队列。
 
 - 等待队列是一个FIFO的队列，队列中每个节点都包含一个线程引用，这个线程就是在Condition上等待的线程。如果一个线程调用了condition.await()方法，那么这个线程将会释放锁，构造成节点加入等待队列并且进入等待状态。
-- 区别：同步队列存放的是竞争同步资源的线程的引用；等待队列存放待唤醒的线程的引用
-- 联系：队列的节点类型都是AbstractQueuedSynchronizer.Node；其他线程调用condition.signal()或signalAll()时，唤醒等待队列首节点中的线程，并且首节点移动到同步队列尾部中去竞争锁，只有竞争锁成功，才会继续向下执行。
+- 区别：同步队列存放的是竞争同步资源的线程的引用；条件队列中存放待唤醒的线程的引用。
+- 联系：`队列的节点类型都是AbstractQueuedSynchronizer.Node，其他线程调用condition.signal()或signalAll()时，唤醒等待队列首节点中的线程，并且首节点移动到同步队列尾部中去竞争锁，只有竞争锁成功，才会继续向下执行。`
 
 <img src=".images/20200410231012.png" alt="image-20200407233818054" style="zoom:50%;" />
 
@@ -38,7 +39,7 @@ Condition拥有首节点和尾节点的引用，而新增节点只需要将原�
 - 当await系列方法返回时，当前线程一定是获取到了Condition相关联的锁。
 - 从队列的角度看，调用await()方法相当于同步队列的首节点（获取了锁的节点）移动到Condition的等待队列中
 
-<img src=".images/20200410231050.png" alt="image-20200408113109762" style="zoom: 33%;" />
+<img src=".images/20200410231050.png" alt="image-20200408113109762" style="zoom: 50%;" />
 
 调用了await()方法的线程成功获取了锁的线程，也就是同步队列中的首节点，方法中会将当前线程构建成节点并添加到等待队列中，然后释放同步状态，唤醒同步队列中的后继节点，然后当前线程会进入等待状态。
 
