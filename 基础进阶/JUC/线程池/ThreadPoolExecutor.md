@@ -1,4 +1,4 @@
-## 线程池类继承体系
+## 1、线程池类继承体系
 
 <img src=".images/image-20200706090625195.png" alt="image-20200706090625195" style="zoom:50%;" />
 
@@ -13,7 +13,7 @@
 
 - 线程池中BlockingQueue也是非常重要，当线程池的线程数量大于corePoolSize，每个任务都会提交到任务队列，等待线程池中线程来获取并执行。BlockingQueue在不同使用场景中有对应不同的实现。
 
-## Executor接口
+## 2、Executor接口
 
 ```java
 public interface Executor {
@@ -97,7 +97,7 @@ class SerialExecutor implements Executor {
 
 Executor 这个接口只有提交任务功能，太简单了，想要更丰富的功能，比如想获取执行结果、想知道当前线程池有多少个线程活着、已经完成了多少任务等等，这些都是这个接口的不足的地方。接下来我们要介绍的是继承自 `Executor` 接口的 `ExecutorService` 接口，这个接口提供了比较丰富的功能，也是我们最常使用到的接口。
 
-## ExecutorService接口
+## 3、ExecutorService接口
 
 这个接口一般情况下都可以满足大部分需要，因此一般使用线程池的时候往往都是使用如下的方式：
 
@@ -138,7 +138,7 @@ public interface ExecutorService extends Executor {
 
 ```
 
-## FutureTask任务类
+## 4、FutureTask任务类
 
 <img src=".images/image-20200706090717211.png" alt="image-20200706090717211" style="zoom:50%;" />
 
@@ -158,7 +158,7 @@ public interface Callable<V> {
 }
 ```
 
-## AbstractExecutorService抽象类
+## 5、AbstractExecutorService抽象类
 
 AbstractExecutorService是ExecutorService的抽象实现。实现了几个实用的方法，提供给子类调用。这个抽象类实现了 invokeAny 方法和 invokeAll 方法，这里的两个 newTaskFor 方法也比较有用，用于将任务包装成 FutureTask。定义于最上层接口 Executor中的 `void execute(Runnable command)` 由于不需要获取结果，不会进行 FutureTask 的包装。`需要获取结果（FutureTask），用 submit 方法，不需要获取结果，可以用 execute 方法。`
 
@@ -167,9 +167,24 @@ AbstractExecutorService是ExecutorService的抽象实现。实现了几个实用
 - invokeAll()：执行任务
 - newTaskFor()：用于将Runnable或Callable任务包装成FutureTask类型的任务
 
-## ThreadPoolExecutor线程池类
+## 6、ThreadPoolExecutor线程池
 
 ThreadPoolExecutor是线程池的JDK具体实现，实现了各个方法（任务提交、线程管理、监控等方法）
+
+<img src=".images/image-20200706110053853.png" alt="image-20200706110053853" style="zoom:50%;" />
+
+ThreadLocalExecutor的核心数据结构
+
+```java
+public class ThreadPoolExecutor extends AbstractExecutorService {
+    private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
+    private static final int COUNT_BITS = Integer.SIZE - 3;
+    private static final int CAPACITY   = (1 << COUNT_BITS) - 1;
+    private final BlockingQueue<Runnable> workQueue;				//任务队列
+    private final ReentrantLock mainLock = new ReentrantLock();		//对线程池内部各种变量进行互斥访问控制的锁
+    private final HashSet<Worker> workers = new HashSet<Worker>();	//线程集合
+}
+```
 
 #### 1、提交任务的方法
 
@@ -264,7 +279,7 @@ private static final int SHUTDOWN   =  0 << COUNT_BITS;
 private static final int STOP       =  1 << COUNT_BITS;
 private static final int TIDYING    =  2 << COUNT_BITS;
 private static final int TERMINATED =  3 << COUNT_BITS;
-
+//从ctl变量找那个分别分解出runState和workerCount变量
 private static int runStateOf(int c)     { return c & ~CAPACITY; }
 private static int workerCountOf(int c)  { return c & CAPACITY; }
 private static int ctlOf(int rs, int wc) { return rs | wc; }
