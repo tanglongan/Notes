@@ -229,8 +229,7 @@ public ThreadPoolExecutor(int corePoolSize,
             keepAliveTime < 0)
             throw new IllegalArgumentException();
         // 这几个参数都是必须要有的
-        if (workQueue == null || threadFactory == null || handler == null) 
-            throw new NullPointerException();
+        if (workQueue == null || threadFactory == null || handler == null) throw new NullPointerException();
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -491,7 +490,7 @@ public void execute(Runnable command) {
         //如果线程池不处于运行状态，就从队列中移除刚刚添加的那个任务
         if (! isRunning(recheck) && remove(command)){
             reject(command);
-        } else if (workerCountOf(recheck) == 0){ //考虑到任务提交到队列中了，但是线程都关闭了的可能
+        } else if (workerCountOf(recheck) == 0){ //考虑到任务提交到队列中了，但是线程都关闭了
             addWorker(null, false);
         }
     }
@@ -530,19 +529,21 @@ private boolean addWorker(Runnable firstTask, boolean core) {
         }
 
         for (;;) {
+            //工作线程个数
             int wc = workerCountOf(c);
             //创建线程的个数边界
             if (wc >= CAPACITY || wc >= (core ? corePoolSize : maximumPoolSize)){
                 return false;
             }
-            //执行到此处，表示创建线程的前提条件已经满足了，使用CAS操作更新线程池的线程数变量。
-            if (compareAndIncrementWorkerCount(c))
-                //如果失败，表示有其他线程也在向线程池中创建线程。跳转到方法中外层循环处，重新尝试检查和创建操作一把
+            //执行到此处，表示创建线程的前提条件已经满足了，使用CAS操作更新线程池的线程数变量，直到成功为止。
+            if (compareAndIncrementWorkerCount(c)){
                 break retry;
+            }
             //由于处于并发环境，重新获取状态；在并发场景下，如果线程池的状态发生变化，就重新再操作一把
             c = ctl.get();
-            if (runStateOf(c) != rs)
+            if (runStateOf(c) != rs){
                 continue retry;
+            }
         }
     }
 	
@@ -553,7 +554,7 @@ private boolean addWorker(Runnable firstTask, boolean core) {
     boolean workerAdded = false;	//是否已将这个worker添加到workers这个HashSet 中
     Worker w = null;
     try {
-        w = new Worker(firstTask); //创建worker对象，构造方法里通过线程工厂创建了一个线程对象
+        w = new Worker(firstTask); //创建worker对象，构造方法里通过线程工厂ThreadFactory创建了一个线程对象
         final Thread t = w.thread; //获取worker中新的线程对象引用
         if (t != null) {
             //获取线程池的“全局锁”，以此保证线程安全
@@ -561,13 +562,13 @@ private boolean addWorker(Runnable firstTask, boolean core) {
             mainLock.lock();
             try {
                 int rs = runStateOf(ctl.get());
-				//如果小于SHUTDOWN，即RUNNABLE是最正常的场景；如果是SHUTDIWN，那不会接受新任务，但会继续执行任务队列的任务执行完
+				//如果小于SHUTDOWN，即RUNNABLE是最正常的场景；如果是SHUTDIWN，那不会接受新任务，但会继续将任务队列的任务执行完毕
                 if (rs < SHUTDOWN || (rs == SHUTDOWN && firstTask == null)) {
                     //判断一下，新线程不能是已经启动的状态，否则下面会有问题
                     if (t.isAlive()){
                         throw new IllegalThreadStateException();
                     }
-                    //将线程添加到线程集合里面
+                    //将线程添加到线程池的集合中
                     workers.add(w);
                     int s = workers.size();
                     //largestPoolSize用来记录线程池中线程个数曾经达到的最大值
@@ -587,8 +588,9 @@ private boolean addWorker(Runnable firstTask, boolean core) {
         }
     } finally {
         //如果没有线程启动失败，做一些清理工作。比如workCount减1，从队列删除这个有问题线程等
-        if (! workerStarted)
+        if (! workerStarted){
             addWorkerFailed(w);
+        }
     }
     //返回线程启动是否成功的结果
     return workerStarted;
