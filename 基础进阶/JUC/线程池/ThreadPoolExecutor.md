@@ -1,6 +1,6 @@
 ## 线程池类继承体系
 
-<img src=".images/20200412000542.png" alt="image-20200411233637451" style="zoom:50%;" />
+<img src=".images/image-20200706090625195.png" alt="image-20200706090625195" style="zoom:50%;" />
 
 - Executor：最顶层的接口，也是最简单的，就一个execute(Runnable runnable)接口方法定义。
 - ExecutorService：也是接口，在Executor接口的基础上添加了很多接口方法，所以一般情况下，就是使用的这个接口
@@ -9,7 +9,7 @@
 
 - 线程池的实现还涉及到了如下的类。由于线程池支持获取线程执行结果，所以引入了Future接口，RunnableFuture接口继承了它，最重要的是其实现类FutureTask。``线程池的使用过程是往线程池中提交任务（Task），提交的任务是实现了Runnable接口，实际上是将Runnable的任务包装成了FutureTask，然后再提交到线程池中。``FutureTask类就是一个任务（Task），具有Future接口语义，即可以在将来获取执行结果。
 
-    <img src=".images/20200412000551.png" alt="image-20200411233706745" style="zoom:40%;" />
+    <img src=".images/image-20200706090536553.png" alt="image-20200706090536553" style="zoom:50%;" />
 
 - 线程池中BlockingQueue也是非常重要，当线程池的线程数量大于corePoolSize，每个任务都会提交到任务队列，等待线程池中线程来获取并执行。BlockingQueue在不同使用场景中有对应不同的实现。
 
@@ -140,7 +140,7 @@ public interface ExecutorService extends Executor {
 
 ## FutureTask任务类
 
-<img src=".images/20200412091319.png" alt="image-20200412090519264" style="zoom:50%;" />
+<img src=".images/image-20200706090717211.png" alt="image-20200706090717211" style="zoom:50%;" />
 
 FutureTask由RunnableFuture间接实现了Runnable接口，所以Runnable通常都会包装成FutureTask，再调用executor.execute()提交给线程池。
 
@@ -466,7 +466,7 @@ private final class Worker extends AbstractQueuedSynchronizer implements Runnabl
 
 执行流程如图所示
 
-<img src=".images/20200410232420.png" alt="image-20200410101602671" style="zoom: 33%;" />
+<img src=".images/image-20200706090810370.png" alt="image-20200706090810370" style="zoom:50%;" />
 
 ```java
 public void execute(Runnable command) {
