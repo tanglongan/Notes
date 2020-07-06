@@ -478,7 +478,7 @@ private final class Worker extends AbstractQueuedSynchronizer implements Runnabl
 }
 ```
 
-#### 5、核心方法execute()
+#### 5、任务提交execute()
 
 执行流程如图所示
 
@@ -491,7 +491,7 @@ public void execute(Runnable command) {
     }
     //控制变量，包含了线程池运行状态和线程池已有线程个数
     int c = ctl.get();
-    //如果当前线程个数小于核心线程数，直接添加一个worker来执行任务（workerCountOf获取当前池中已有线程个数）
+    //如果当前线程个数小于核心线程数，直接添加一个worker来执行任务
     if (workerCountOf(c) < corePoolSize) {
         //创建新线程并把当前任务command作为firstTask来执行。执行的结果会包装在FutureTask中，返回false表示线程池不允许提交任务
         if (addWorker(command, true)){
@@ -500,7 +500,7 @@ public void execute(Runnable command) {
         c = ctl.get();	//此处代表addWorker失败了，重新获取线程池的运行状态
     }
     
-    //此处表示当前线程数大于核心线程个数了，如果运行状态是RUNNABLE，就将任务添加到任务队列中
+    //此处表示当前线程数大于等于核心线程数，就将通过workQueue.offer()将任务添加到队列
     if (isRunning(c) && workQueue.offer(command)) {
         int recheck = ctl.get();
         //如果线程池不处于运行状态，就从队列中移除刚刚添加的那个任务
@@ -632,12 +632,24 @@ private void addWorkerFailed(Worker w) {
 }
 ```
 
-worker线程start后，其run方法会调用runWorker方法
+#### 6、任务执行过程
+
+在上面的任务提交过程中，可能会开启一个新线程Worker，并且会把任务本身作为firstTask赋值给该worker。但是对于一个Worker来说，不是只执行一个任务，而是源源不断地从对了中获取任务执行，这是一个循环的过程。工作线程Worker实现了Runnable接口，在它启动之后就会调用其run()方法：
 
 ```java
-// 工作线程Worker类的实现了Runnable接口，它的run() 方法如下
-public void run() {
-    runWorker(this);
+private final class Worker extends AbstractQueuedSynchronizer implements Runnable{
+    final Thread thread;			//当前线程
+    Runnable firstTask;				//初始执行的任务，可能为空
+    volatile long completedTasks;	//worker线程执行完成的任务个数
+    Worker(Runnable firstTask) {
+        setState(-1); // inhibit interrupts until runWorker
+        this.firstTask = firstTask;
+        this.thread = getThreadFactory().newThread(this);
+    }
+    //Worker线程启动方法，调用了ThreadPoolExecutor.runWorker(Worker w)方法
+    public void run() {
+        runWorker(this);
+    }
 }
 
 /*
@@ -656,8 +668,9 @@ final void runWorker(Worker w) {
     try {
         //循环调用getTask()方法获取任务
         while (task != null || (task = getTask()) != null) {
+            //在执行任务之前要先加锁。
             w.lock();
-            //如果线程池状态大于等于STOP，线程也要中断
+            //拿到任务了，在执行之前重新检测一下线程池状态。如果发现已经关闭，自己给自己发中断信号
             if ((runStateAtLeast(ctl.get(), STOP) ||(Thread.interrupted() && runStateAtLeast(ctl.get(), STOP))) &&
                 !wt.isInterrupted()){
                 wt.interrupt();
@@ -751,7 +764,7 @@ private Runnable getTask() {
 }
 ```
 
-#### 6、饱和策略
+#### 7、饱和策略
 
 查看execute()核心方法，最后一步是当线程个数达到最大限制且任务队列已满的时候，就是根据饱和策略处理新提交的任务。
 
@@ -810,7 +823,66 @@ public static class DiscardOldestPolicy implements RejectedExecutionHandler {
 }
 ```
 
-## Executors工具类
+#### 8、线程池的状态
+
+线程池有5种状态，分别是RUNNABLE、SHUTDOWN、STOP、TIDYING、TERMINATED。
+
+<img src=".images/image-20200706153056821.png" alt="image-20200706153056821" style="zoom:50%;" />
+
+- 线程池有两个不同的函数，shutdown()和shutdownNow()，这两个函数会让线程池切换到不同的状态。
+- 在队列为空，线程池也为空的时候，进入TIDYING状态
+- 最后一个钩子函数terminated()，进入TERMINATED状态，线程池才“寿终正寝”。
+
+正确关闭线程池的步骤
+
+```java
+executor.shutdown();//或者
+exectuor.shutdownNow();
+//调用完上面的操作之后，再循环调用awaitTermination，等待线程池真正终止
+try{
+    boolean loop = true;
+    do{
+        //等待所有任务完成，直到线程池里所有任务结束
+        loop != executor.awaitTermination(2,TimeUnit.SECONDS);
+    } while(loop);
+} catch(InterruptedException e){
+    ....
+}
+```
+
+## 7、Callable和Future
+
+execute(Runnable task)接口是没有返回值的，与之对应的是一个有返回值接口的Future submit(Callable task)。
+
+```java
+public interface Callable<V> {
+    V call() throws Exception;
+}
+```
+
+一般的使用方式如下
+
+```java
+//自定义一个Callable，类似于定义一个Runnable
+Callable<String> c = new XXXCallable<String>();
+//把Callable提交给线程池执行，线程池立马返回一个Future，“票据”
+Future<String> f = executor.submit(c);
+//拿着“票据”取回结果。如果任务没有执行完毕，调用者一直阻塞在这里。
+String result = f.get();
+```
+
+submit(Callable task)并不是在ThreadPoolExecutor里面直接实现的，而是在其父类AbstractExecutorService类中实现的，源码如下：
+
+```java
+public <T> Future<T> submit(Callable<T> task) {
+    if (task == null) throw new NullPointerException();
+    RunnableFuture<T> ftask = newTaskFor(task); //把Callable转化成Runnable接口
+    execute(ftask);
+    return ftask;
+}
+```
+
+## 8、Executors工具类
 
  Executors 这个类，因为它仅仅是工具类，它的所有方法都是 static 的。
 
@@ -858,7 +930,14 @@ public static class DiscardOldestPolicy implements RejectedExecutionHandler {
 
     这种线程池对于任务可以比较快速完成的场景有比较好的性能。如果线程空闲了60秒都没有任务，那么将关闭线程并且从线程池移除。
 
-## 线程池的关闭
+## 9、线程池的关闭
+
+### 8.1、shudown()和shutdownNow()区别
+
+- shutdown不会清空任务队列，会等到所有任务执行完毕；shutdownNow()会清空任务队列
+- shutdown只会中断空闲的线程，shutdownNow()会中断所有线程
+
+### 8.1、shudown()和shutdownNow()原理
 
 - shutdown()：原理是将线程池的状态设置为SHUTDOWN，然后中断所有没有正在执行的任务的线程
 
@@ -866,7 +945,7 @@ public static class DiscardOldestPolicy implements RejectedExecutionHandler {
 
     通常使用shutdown()来关闭线程，如果任务不一定要执行完，就可以使用shutdownNow()。
 
-## 总结
+## 10、总结
 
 - Java线程池有哪些关键属性？
 
