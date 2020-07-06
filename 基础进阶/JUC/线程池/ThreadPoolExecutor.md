@@ -22,7 +22,7 @@ public interface Executor {
 }
 ```
 
-Doug Lea在这个接口的源码注释中做了一些概述如下：以往我们使用线程的方式
+Doug Lea在这个接口的源码注释中做了一些概述如下：一般使用线程的方式
 
 ```java
 new Thread(new Runnable(){
@@ -144,7 +144,7 @@ public interface ExecutorService extends Executor {
 
 FutureTask由RunnableFuture间接实现了Runnable接口，所以Runnable通常都会包装成FutureTask，再调用executor.execute()提交给线程池。
 
-Runnable 的 void run() 方法是没有返回值的，所以，通常，如果我们需要的话，会在 submit 中指定第二个参数作为返回值。
+Runnable 的 void run() 方法是没有返回值的，所以如果需要返回值的话，会在 submit 中指定第二个参数作为返回值。
 
 ```java
 <T> Future<T> submit(Runnable task, T result);
@@ -162,10 +162,10 @@ public interface Callable<V> {
 
 AbstractExecutorService是ExecutorService的抽象实现。实现了几个实用的方法，提供给子类调用。这个抽象类实现了 invokeAny 方法和 invokeAll 方法，这里的两个 newTaskFor 方法也比较有用，用于将任务包装成 FutureTask。定义于最上层接口 Executor中的 `void execute(Runnable command)` 由于不需要获取结果，不会进行 FutureTask 的包装。`需要获取结果（FutureTask），用 submit 方法，不需要获取结果，可以用 execute 方法。`
 
+- submit()：提交任务
 - invokeAny()：执行任务
 - invokeAll()：执行任务
 - newTaskFor()：用于将Runnable或Callable任务包装成FutureTask类型的任务
-- submit()：提交任务
 
 ## ThreadPoolExecutor线程池类
 
@@ -223,13 +223,14 @@ public ThreadPoolExecutor(int corePoolSize,
                               BlockingQueue<Runnable> workQueue,
                               ThreadFactory threadFactory,
                               RejectedExecutionHandler handler) {
-        if (corePoolSize < 0 ||
-            maximumPoolSize <= 0 ||
-            maximumPoolSize < corePoolSize ||
-            keepAliveTime < 0)
+    	//参数检查
+        if (corePoolSize < 0 || maximumPoolSize <= 0 || maximumPoolSize < corePoolSize || keepAliveTime < 0){
             throw new IllegalArgumentException();
-        // 这几个参数都是必须要有的
-        if (workQueue == null || threadFactory == null || handler == null) throw new NullPointerException();
+        }
+        if (workQueue == null || threadFactory == null || handler == null){
+            throw new NullPointerException();
+        }
+    	//参数初始化
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -246,11 +247,11 @@ public ThreadPoolExecutor(int corePoolSize,
 - **workQueue**：任务队列，BlockingQueue接口的某个具体实现，常用的是ArrayBlockingQueue和LinkedBlockingQueue。
 - **keepAliveTime**：空闲线程的存活时间。如果某个线程空闲时间超过这个时间都没有任务来执行，线程就会被关闭。这个值不会对所有线程都起作用，如果线程池中线程数少于核心线程数，这些核心线程也不会因为空闲而被关闭，但可以通过allowCoreThreadTimeout(true)进行配置。
 - **threadFactory**：用于创建线程。
-- **handler**：当线程池已满，又有新任务提交时，应该采取的处理策略。
+- **handler**：当线程池已满时，对新提交的任务应该采取的处理策略。
 
 #### 3、状态控制参数
 
-Doug Lea采用了一个32位的整数来存放线程池的状态和当前线程池中线程数。其中高3位存放线程池状态，低29位存放线程数。Java语言在整数编码上统一使用补码。下面是简单的移位和布尔操作。
+Doug Lea采用了一个32位的整数来存放线程池的状态和当前线程池中线程数。其中`高3位存放线程池状态，低29位存线程个数`。Java语言在整数编码上统一使用补码。下面是简单的移位和布尔操作。
 
 ```java
 private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
@@ -297,7 +298,7 @@ private static final int TIDYING    =  2 << COUNT_BITS;
 private static final int TERMINATED =  3 << COUNT_BITS;
 ```
 
-- RUNNING：可以接受新任务并且处理已经在阻塞队列中的任务。高3位全部是1的话，就是RUNNING。
+- **RUNNING：可以接受新任务并且处理已经在阻塞队列中的任务**。高3位全部是1的话，就是RUNNING。
 
     ```java
     -1 << COUNT_BITS  //这里是-1往左移29位，稍微有点不一样，-1的话需要我们自己算出补码来
@@ -308,7 +309,7 @@ private static final int TERMINATED =  3 << COUNT_BITS;
     111 00000 00000000 00000000 00000000	//关键了，往左移29位，所以高3位全是1就是RUNNING状态
     ```
 
-- SHUTDOWN：不接受新任务，但是会处理已经在任务队列中的任务。高3位全是0的时候就是SHUTDOWN。
+- **SHUTDOWN：不接受新任务，但是会处理已经在任务队列中的任务**。高3位全是0的时候就是SHUTDOWN。
 
     ```java
     0 << COUNT_BITS
@@ -316,7 +317,7 @@ private static final int TERMINATED =  3 << COUNT_BITS;
     00000000 00000000 00000000 00000000	//往左移29位
     ```
 
-- STOP：不接受新任务，也不处理任务队列已有任务，并且会中断正在处理的线程。高3位001。
+- **STOP：不接受新任务，也不处理任务队列已有任务，并且会中断正在处理的线程**。高3位001。
 
     ```java
     1 << COUNT_BITS
@@ -324,7 +325,7 @@ private static final int TERMINATED =  3 << COUNT_BITS;
     00100000 00000000 00000000 00000000	//往左移29位
     ```
 
-- TIDYING：所有任务都被中止，workCount为0，线程状态转化为TIDYING，并且条用terminaled()回调方法。高3位是010。
+- **TIDYING：所有任务都被中止，workCount为0，线程状态转化为TIDYING，并且条用terminaled()回调方法**。高3位是010。
 
     ```java
     2 << COUNT_BITS
@@ -332,7 +333,7 @@ private static final int TERMINATED =  3 << COUNT_BITS;
     01000000 00000000 00000000 00000000	//往左移29位
     ```
 
-- TERMINALED：terminaled()方法调用完成，线程池状态就变成了这个
+- **TERMINALED：terminaled()方法调用完成，线程池状态就变成了这个**
 
     ```java
     3 << COUNT_BITS
@@ -518,7 +519,7 @@ private boolean addWorker(Runnable firstTask, boolean core) {
         int rs = runStateOf(c);
 
         /*
-         * 当线程池状态大于 SHUTDOWN，其实也就是 STOP, TIDYING, 或 TERMINATED
+         * 当线程池状态大于 SHUTDOWN，其实也就是 STOP, TIDYING, 或 TERMINATED，即下面的不允许创建线程并会返回false，表示创建失败。
          * 当线程池状态处于 SHUTDOWN，不允许提交任务，但是已有的任务继续执行
          * 当线程池状态大于 SHUTDOWN，不允许提交任务，且中断正在执行的任务
          * 如果线程池状态为 SHUTDOWN，但是 firstTask 为 null，且 workQueue 非空，那么是允许创建worker的
@@ -531,7 +532,8 @@ private boolean addWorker(Runnable firstTask, boolean core) {
         for (;;) {
             //工作线程个数
             int wc = workerCountOf(c);
-            //创建线程的个数边界
+            //创建线程的个数边界。
+            //超过线程池线程数最大容量数、或大于边界个数都是不允许创建线程，直接返回false，即表示创建失败。
             if (wc >= CAPACITY || wc >= (core ? corePoolSize : maximumPoolSize)){
                 return false;
             }
@@ -557,7 +559,7 @@ private boolean addWorker(Runnable firstTask, boolean core) {
         w = new Worker(firstTask); //创建worker对象，构造方法里通过线程工厂ThreadFactory创建了一个线程对象
         final Thread t = w.thread; //获取worker中新的线程对象引用
         if (t != null) {
-            //获取线程池的“全局锁”，以此保证线程安全
+            //获取线程池的“全局锁”，以此保证安全地创建线程
             final ReentrantLock mainLock = this.mainLock;
             mainLock.lock();
             try {
@@ -618,14 +620,14 @@ private void addWorkerFailed(Worker w) {
 worker线程start后，其run方法会调用runWorker方法
 
 ```java
-// Worker 类的 run() 方法
+// 工作线程Worker类的实现了Runnable接口，它的run() 方法如下
 public void run() {
     runWorker(this);
 }
 
 /*
- * worker线程执行任务
- * worker线程启动后，在whlie循环里面不断地从任务队列中获取任务来执行
+ * worker工作线程执行任务
+ * worker工作线程启动后，在whlie循环里面不断地从任务队列中获取任务来执行
  * 上面已经提到，worker初始化的时候，可以不指定firstTask，那么第一个任务就可以从任务队列中获取
  */
 final void runWorker(Worker w) {
@@ -641,11 +643,11 @@ final void runWorker(Worker w) {
         while (task != null || (task = getTask()) != null) {
             w.lock();
             //如果线程池状态大于等于STOP，线程也要中断
-            if ((runStateAtLeast(ctl.get(), STOP) ||
-                 (Thread.interrupted() &&
-                  runStateAtLeast(ctl.get(), STOP))) &&
-                !wt.isInterrupted())
+            if ((runStateAtLeast(ctl.get(), STOP) ||(Thread.interrupted() && runStateAtLeast(ctl.get(), STOP))) &&
+                !wt.isInterrupted()){
                 wt.interrupt();
+            }
+            
             try {
                 //这是一个回调方法入口，是留给需要的子类实现的
                 beforeExecute(wt, task);
@@ -713,16 +715,19 @@ private Runnable getTask() {
         //wc > maximumPoolSize 的情况？返回 null 意味着关闭线程。
         //有可能开发者调用了 setMaximumPoolSize() 将线程池的 maximumPoolSize 调小了，那么多余的 Worker 就需要被关闭
         if ((wc > maximumPoolSize || (timed && timedOut)) && (wc > 1 || workQueue.isEmpty())) {
-            if (compareAndDecrementWorkerCount(c))
+            //CAS操作减少线程个数
+            if (compareAndDecrementWorkerCount(c)){
                 return null;
+            }
             continue;
         }
 
         try {
             //从队列中获取任务
             Runnable r = timed ? workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) : workQueue.take();
-            if (r != null)
+            if (r != null){
                 return r;
+            }
             timedOut = true;
         } catch (InterruptedException retry) {
             timedOut = false;
@@ -733,7 +738,7 @@ private Runnable getTask() {
 
 #### 6、饱和策略
 
-查看execute()核心方法，可以看到最后一步是当线程个数达到最大限制且任务队列已满的时候，就是根据饱和策略处理新提交的任务。
+查看execute()核心方法，最后一步是当线程个数达到最大限制且任务队列已满的时候，就是根据饱和策略处理新提交的任务。
 
 ```java
 final void reject(Runnable command) {
@@ -744,10 +749,10 @@ final void reject(Runnable command) {
 
 JDK预定义了4种：
 
-- **抛出RejectedExecutionHandler异常**（缺省策略）
-- **直接忽略任务**
-- **使用提交任务的线程来执行此任务**
-- **将队列中等待最久的任务删除，然后提交此任务**
+- **AbortPolicy：抛出RejectedExecutionHandler异常**（缺省策略）
+- **DiscardPolicy：直接忽略任务**
+- **CallerRunsPolicy：使用提交任务的线程来执行此任务**
+- **DiscardOldestPolicy：将队列中等待最久的任务删除，然后提交此任务**
 
 handler是由ThreadPoolExecutor构造方法初始化的时候传入进来的，它是RejectedExecutionHandler的实例。RejectedExecutionHandler已经在ThreadPoolExecutor中定义了4个，当然也可以根据需要自行定义，只要实现RejectedExecutorHandler接口。
 
@@ -813,7 +818,9 @@ public static class DiscardOldestPolicy implements RejectedExecutionHandler {
     ```java
     //只需要将线程数设置为1即可
     public static ExecutorService newSingleThreadExecutor() {
-        return new FinalizableDelegatedExecutorService(new ThreadPoolExecutor(1, 1,
+        return new FinalizableDelegatedExecutorService(new ThreadPoolExecutor(
+            										   1, 
+            										   1,
                                     				   0L, 
                                                        TimeUnit.MILLISECONDS,
                                     				   new LinkedBlockingQueue<Runnable>()));
