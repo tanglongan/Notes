@@ -1,4 +1,4 @@
-ArrayBlockingQueue是一个用数组实现的环形队列，造构造函数中，会要求传入数组的容量。
+ArrayBlockingQueue是一个用数组实现的环形队列，在构造函数中，会要求传入数组的容量。
 
 ```java
 public ArrayBlockingQueue(int capacity, boolean fair) {

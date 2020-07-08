@@ -6,7 +6,9 @@
 
 ```java
 public class Singleton {
-    
+    private Singleton(){
+        //重写构造方法，这样就不能通过new的方式去创建了
+    }
     private static Singleton instance; // 不使用volatile关键字
     
     // 双重锁检验

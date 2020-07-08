@@ -1,6 +1,6 @@
 队列是先进先出的，而PriorityBlockingQueue是按照元素的优先级从小到大出队列的。
 
-正因如此，PriorityQueue中2个元素之间需要可以比较大小，并实现Comparable接口。
+正因如此，PriorityBlockingQueue中2个元素之间需要可以比较大小，并实现Comparable接口。
 
 核心数据结构：
 

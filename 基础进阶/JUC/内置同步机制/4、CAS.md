@@ -17,3 +17,4 @@ compare and swap，JDK中使用Unsafe类里面的native方法，在JVM实现时�
 ### 4、ThreadLocal中的弱引用
 
 ![image-20200704220318811](.images/image-20200704220318811.png)
+
