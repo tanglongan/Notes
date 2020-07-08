@@ -110,8 +110,8 @@ final Node<K,V>[] resize() {
     }
     threshold = newThr;
 
-    // 用新的数组大小初始化新的数组
-    Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+    
+    Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap]; // 创建新数组
     table = newTab; // 如果是初始化数组，到这里就结束了，返回 newTab 即可
 
     if (oldTab != null) {
