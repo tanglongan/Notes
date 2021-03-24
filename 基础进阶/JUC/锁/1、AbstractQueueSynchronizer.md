@@ -26,7 +26,7 @@ private transient Thread exclusiveOwnerThread;
 ```java
    static final class Node {
         static final Node SHARED = new Node();	//标识当前节点在共享模式下
-        static final Node EXCLUSIVE = null;		//标识当前节点在独占模式下
+        static final Node EXCLUSIVE = null;		  //标识当前节点在独占模式下
 
         static final int CANCELLED =  1; //线程被取消
         static final int SIGNAL    = -1; //当前节点的后继节点需要被唤醒
@@ -94,7 +94,7 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
     // ...
 }
 
-abstract static class NofairSync extends AbstractQueuedSynchronizer {
+abstract static class NofairSync extends Sync {
 	// ...
 }
 ```

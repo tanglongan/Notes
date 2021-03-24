@@ -1,6 +1,6 @@
 ### Condition接口
 
-> - Java所有对象包含了wait( )、wait( long)、notify( )、notifyAll( )方法这些方法可以与synchronized同步关键字配合，可以实现等待/通知模式。
+> - Java所有对象包含了wait( )、wait( long)、notify( )、notifyAll( )方法这些方法可以与synchronized同步关键字配合来实现等待/通知模式。
 > - Condition接口也提供了类似Object的监视器方法，与Lock搭配使用可以实现等待/通知模式。两者在使用方式和功能特性都有一些差异。
 
 Object方式是Java语言底层提供的，Lock/Condition是语言级别提供的，具有更高的可控制性和扩展性。
