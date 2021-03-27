@@ -409,15 +409,15 @@ private Node enq(final Node node) {
 
 首先，是线程2初始化 head 节点，此时 head、tail、waitStatus=0
 
-<img src=".images/20200410232838.png" alt="image-20200408230744838" style="zoom: 25%;" />
+<img src=".images/20200410232838.png" alt="image-20200408230744838" style="zoom: 100%;" />
 
 然后线程2入队
 
-<img src=".images/20200410231414.png" alt="image-20200408230821380" style="zoom: 25%;" />
+<img src=".images/20200410231414.png" alt="image-20200408230821380" style="zoom: 100%;" />
 
 同时我们也要看此时节点的 waitStatus，由于 head 节点是线程 2 初始化的，此时的 waitStatus 没有设置， java 默认会设置为 0，但是到 shouldParkAfterFailedAcquire 这个方法的时候，线程 2 会把前驱节点，也就是 head 的waitStatus设置为 -1。那线程 2 节点此时的 waitStatus 是多少呢，由于没有设置，所以是 0；如果线程 3 此时再进来，直接插到线程 2 的后面就可以了，此时线程 3 的 waitStatus 是 0，到 shouldParkAfterFailedAcquire 方法的时候把前驱节点线程 2 的 waitStatus 设置为 -1。
 
-<img src=".images/20200410232923.png" alt="image-20200408230908841" style="zoom: 25%;" />
+<img src=".images/20200410232923.png" alt="image-20200408230908841" style="zoom: 100%;" />
 
 这里可以简单说下 waitStatus 中 SIGNAL(-1) 状态的意思，Doug Lea 注释的是：代表后继节点需要被唤醒。也就是说这个 waitStatus 其实代表的不是自己的状态，而是后继节点的状态，我们知道，每个 node 在入队的时候，都会把前驱节点的状态改为 SIGNAL，然后阻塞，等待被前驱唤醒。
 

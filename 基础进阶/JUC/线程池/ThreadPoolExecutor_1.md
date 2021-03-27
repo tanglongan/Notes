@@ -142,9 +142,7 @@ public interface ExecutorService extends Executor {
 
 <img src=".images/image-20200706090717211.png" alt="image-20200706090717211" style="zoom:50%;" />
 
-FutureTask由RunnableFuture间接实现了Runnable接口，所以Runnable通常都会包装成FutureTask，再调用executor.execute()提交给线程池。
-
-Runnable 的 void run() 方法是没有返回值的，所以如果需要返回值的话，会在 submit 中指定第二个参数作为返回值。
+FutureTask由RunnableFuture间接实现了Runnable接口，所以Runnable通常都会包装成FutureTask，再调用executor.execute()提交给线程池。Runnable 的 void run() 方法是没有返回值的，所以如果需要返回值的话，会在 submit 中指定第二个参数作为返回值。
 
 ```java
 <T> Future<T> submit(Runnable task, T result);
