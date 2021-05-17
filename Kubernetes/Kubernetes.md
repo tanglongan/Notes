@@ -66,6 +66,35 @@ Kubernetes本质上是`` 一组服务器集群``，它可以在集群的每个�
 
 **Namespace**：命名空间，用来隔离Pod的运行环境
 
+# 第二章：集群环境搭建
+
+主机名解析
+
+编写三台主机的/etc/hosts文件，添加内容如下
+
+```text
+192.168.188.100 master
+192.168.188.101 node1
+192.168.188.101 node2
+```
+
+时间同步
+
+```shell
+systemctl start chronyd
+systemctl enable chronyd
+date
+```
+
+禁用iptables和firewalld
+
+```shell
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl stop iptables
+systemctl disable iptables
+```
+
 
 
 
