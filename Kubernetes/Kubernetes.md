@@ -1,6 +1,6 @@
 # 第一章：kubernetes基础
 
-## Kubernetes概念
+## Kubernetes介绍
 
 Kubernetes是一个全新的基于容器的分布式架构领先方案，是谷歌Brog系统的一个开源版本，于2014年9月发布第一个版本，2015年7月发布第一个正式版本。
 
@@ -41,7 +41,20 @@ Kubernetes本质上是`` 一组服务器集群``，它可以在集群的每个�
 
 ![image-20210517110543319](/Users/tanglongan/Documents/Notes/Kubernetes/.images/Kubernetes/image-20210517110543319.png)
 
-下面部署一个Nginx服务来说明
+下面部署一个Nginx服务来说明Kubernetes系统各个组件之间的调用关系：
+
+1. 首先要明确，一旦Kubernetes环境启动之后，Master和Node节点都会将自身信息存储到etcd数据库中
+2. 一个Nginx服务的安装请求会首先被发送到Master节点的ApiServer组件
+3. ApiServer组件会调用Scheduler组件来决定到底应该把服务安装部署到哪个Node上，此时会从etcd数据库中获取所有Node信息，经过一定算法决策选择，并将结果告知ApiServer
+4. ApiServer调用ControllerManager去调度Node节点安装Nginx服务
+5. kubelet接收到命令之后通知Dcoker，由Docker来启动一个Nginx的Pod，Pod是Kubernetes的最小操作单元，容器必须运行在Pod中
+6. 一个Nginx服务运行之后，如果需要访问Nginx，就需要通过kube-proxy来对Pod产生访问的代理，这样外界用户就可以访问集群中的Nginx服务了。
+
+## Kubernetes概念
+
+
+
+
 
 
 
