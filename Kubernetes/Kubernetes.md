@@ -324,13 +324,14 @@ kubeadm join 192.168.8.134:6443 --token 2wl1mh.n5q5kw40gkcj6saq \
 上面输出结果中最下面已有加入Node节点的命令，后面继续使用。如果希望在所有节点上都能访问Kubernetes的API server，需要执行如下的命令进行配置
 
 ```shell
-#主节点配置
+# Master节点配置
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
+sudo scp /etc/kubernetes/admin.conf root@k8snode1:/root/.kube/config  #将文件传送到k8snode1节点，先创建/root/.kube目录
+sudo scp /etc/kubernetes/admin.conf root@k8snode2:/root/.kube/config  #将文件传送到k8snode2节点，先创建/root/.kube目录
 
 #工作节点
 mkdir -p $HOME/.kube
-sudo scp /etc/kubernetes/admin.conf root@node02:/root/.kube/config #只有这一行主节点上执行
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
