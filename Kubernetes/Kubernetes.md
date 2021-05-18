@@ -200,10 +200,6 @@ EOF
 
 ```shell
 #安装 kubeadm、kubectl、kubelet
-=======
-安装kubectl、kubeadm、kubelet
-
-#安装
 yum install kubelet-1.19.4 kubeadm-1.19.4 kubectl-1.19.4 -y
 
 #配置开启启动
