@@ -103,9 +103,9 @@ PS：swap分区指的是虚拟内存分区，它的作用是在物理内存使�
 
 |  作用  |    IP地址     |  操作系统  |         配置         |
 | :----: | :-----------: | :--------: | :------------------: |
-| Master | 192.168.8.134 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
-| Node1  | 192.168.8.136 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
-| Node2  | 192.168.8.137 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
+| Master | 192.168.8.134 | CentOS 8.3 | 2CPUs、2GMem、50GVol |
+| Node1  | 192.168.8.136 | CentOS 8.3 | 2CPUs、2GMem、50GVol |
+| Node2  | 192.168.8.137 | CentOS 8.3 | 2CPUs、2GMem、50GVol |
 
 本次环境搭建使用一主两从结构，使用CentOS 8.3操作系统，然后在每台机器上安装如下软件包：
 
