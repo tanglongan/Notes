@@ -104,15 +104,234 @@ Kubernetes有多种部署方式，目前主流的方式有kubeadm、minikube、�
 * kubelet：1.17.4
 * kubectl：1.17.4
 
+### 环境要求
+
+Kubernetes部署环境要求
+
+- 一台或多态机器
+- 硬件要求：内存2GB或2GB+，CPU 2核或CPU 2核+ Required
+- 集群内各个机器之间能互相通信 Required
+- 集群内各个机器可以访问外网，需要拉取镜像，非必须要求 Optional
+- 禁止swap分区 Required
+
+### 系统参数
+
+```shell
+#关闭和禁用防火墙
+systemctl stop firewalld
+systemctl disable firewalld
+
+#关闭SELinux
+sed -i 's/enforcing/disabled/' /etc/selinux/config
+
+#关闭swap，k8s禁止虚拟内存以提高性能
+swapoff -a 													#临时关闭
+sed -ri 's/.*swap.*/#&/' /etc/fstab #永久关闭
+
+#在master添加hosts
+cat >>/etc/hosts << EOF
+192.168.8.134 node01
+192.168.8.136 node02
+192.168.8.137 node03
+192.168.8.134 k8smaster
+192.168.8.136 k8snode
+EOF
+
+#设置网桥参数，允许iptables过滤网桥流量
+cat > /etc/sysctl.d/k8s.conf <<EOF
+net.bridge.bridge-nf-call-ip6tables=1
+net.bridge.bridge-nf-call-iptables=1
+EOF
+
+sysctl --system #网桥设置生效
+
+#时间同步（centos8下dhf代替了yum）
+rpm -ivh http://mirrors.wlnmp.com/centos/wlnmp-release-centos.noarch.rpm
+dnf  install wntp -y
+ntpdate time.windows.com
+```
+
 ### 安装Docker
 
+```shell
+#删除已有的docker或podman
+yum remove podman*
+yum remove docker-ce -y
+yum remove runc-1.0.0-70.rc92.module_el8.3.0+699+d61d9c41.x86_64 -y
 
+#更新docker的yum源
+curl https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+
+#安装指定版本的Docker
+yum install docker-ce-19.03.13 -y
+
+#6.配置docker随系统启动，运行docker服务及查看docker服务状态
+systemctl start docker
+systemctl enable docker.service
+```
 
 ### 安装Kubernetes
 
-### 准备集群镜像
+添加阿里云的yum源，安装会更快
+
+```shell
+#添加yum源
+cat > /etc/yum.repos.d/kubernetes.repo <<EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+```
+
+安装kubenetes工具组件
+
+```shell
+#安装 kubeadm、kubectl、kubelet
+yum install kubelet-1.19.4 kubeadm-1.19.4 kubectl-1.19.4 -y
+
+#配置开启启动
+systemctl enable kubelet.service
+
+#验证安装
+yum list installed | grep kubelet
+yum list installed | grep kubeadm
+yum list installed | grep kubectl
+
+#查看安装的版本
+kubelet --version
+```
+
+* **kubeadm**：用于初始化cluster
+
+* **kubelet**：运行在集群中所有节点上，负责启动Pod和容器
+
+* **kubectl**：用来与集群通信的命令行工具，通过kubectl可以部署和管理应用，查看各种资源、创建、删除和更新组件
+
+上述几个步骤完成之后，重启系统，这样确保配置项都生效了
 
 ### 集群初始化
+
+#### 初始化master
+
+```shell
+#在Master节点的机器上执行初始化
+kubeadm init \
+--apiserver-advertise-address=192.168.8.134 \
+--image-repository registry.aliyuncs.com/google_containers \
+--kubernetes-version v1.19.4 \
+--service-cidr=10.96.0.0/12 \
+--pod-network-cidr=10.244.0.0/16
+```
+
+- `--apiserver-advertise-address` ：api-server的广播地址，即Master节点的地址
+- `--image-repository` ：容器的镜像仓库地址
+- `--kubernetes-version` ：Kubernetes的版本号
+- `--service-cidr=10.96.0.0/12` ：Pod网络
+- `--pod-network-cidr=10.244.0.0/16` ：k8s支持多种网络组件，比如Flannel、Weave、Calico等，我们后续使用kube-flannel网络组件，所以必须要设置这个参数，10.244.0.0.0/16是Flannel的默认网段，可以自定义修改。
+
+service-CIDR的选取不能和Podcidr及本机网络有重叠或冲突，一般可以选择一个本机网络和PodCIDR都没有用到的私有网络地址段，网络无重叠冲突即可。
+
+初始化命令执行完毕之后，**先不要clear输出结果**，如下会用到输出里的部分内容，如下图：
+
+```Text
+[root@node01 ~]# kubeadm init \
+> --apiserver-advertise-address=172.16.210.10 \
+> --image-repository registry.aliyuncs.com/google_containers \
+> --kubernetes-version v1.19.4 \
+> --service-cidr=10.96.0.0/12 \
+> --pod-network-cidr=10.244.0.0/16
+W0512 10:36:35.475889    1634 configset.go:348] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+[init] Using Kubernetes version: v1.19.4
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+	[WARNING FileExisting-tc]: tc not found in system path
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "ca" certificate and key
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local node01] and IPs [10.96.0.1 172.16.210.10]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-ca" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "etcd/ca" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [localhost node01] and IPs [172.16.210.10 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [localhost node01] and IPs [172.16.210.10 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Generating "sa" key and public key
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "kubelet.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Starting the kubelet
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+[etcd] Creating static Pod manifest for local etcd in "/etc/kubernetes/manifests"
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests". This can take up to 4m0s
+[apiclient] All control plane components are healthy after 14.004274 seconds
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.19" in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Skipping phase. Please see --upload-certs
+[mark-control-plane] Marking the node node01 as control-plane by adding the label "node-role.kubernetes.io/master=''"
+[mark-control-plane] Marking the node node01 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+[bootstrap-token] Using token: 2wl1mh.n5q5kw40gkcj6saq
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to get nodes
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the "cluster-info" ConfigMap in the "kube-public" namespace
+[kubelet-finalize] Updating "/etc/kubernetes/kubelet.conf" to point to a rotatable kubelet client certificate and key
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.8.134:6443 --token 2wl1mh.n5q5kw40gkcj6saq \
+    --discovery-token-ca-cert-hash sha256:f2bca0e2d2616b586d725f921dd578d70e4281356b0fa123eca0595cf4d3eb5d
+```
+
+上面输出结果中最下面已有加入Node节点的命令，后面继续使用。如果希望在所有节点上都能访问Kubernetes的API server，需要执行如下的命令进行配置
+
+```shell
+#主节点配置
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+#工作节点
+mkdir -p $HOME/.kube
+sudo scp /etc/kubernetes/admin.conf root@node02:/root/.kube/config #只有这一行主节点上执行
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+接下来就要把Node节点加入Kubernetes Master中
+
+
 
 ### 安装网络查件
 
