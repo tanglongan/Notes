@@ -1,3 +1,7 @@
+---
+
+---
+
 # 第一章：kubernetes基础
 
 ## 介绍
@@ -434,6 +438,7 @@ YAML的语法比较简单，主要有以下几个：
 * 缩进不允许TAB，只允许空格
 * 缩进的的空格数不重要，只要相同层级的元素左对齐即可
 * '#'表示行注释
+* 如果多个配置文件要写到同一个文件中，需要使用"---"分割
 
 YAML支持以下几种数据类型：
 
@@ -466,11 +471,148 @@ person:
 person: {name: tanglongan, age: 18}
 ```
 
+## 资源管理方式
+
+* 命令式对象管理：
+
+  直接使用命令去操作Kubernetes资源`kubectl run pod --image=nginx `
+
+* 命令式对象配置：
+
+  通过命令配置和配置文件去操作Kubernetes资源`kubectl create/patch -f nginx-pod.yml`
+
+* 声明式对象配置：
+
+  通过apply命令和配置文件去操作Kubernetes资源`kubectl apply -f nginx-pod.yaml`
+
+| 类型           | 操作对象 | 使用环境 | 优点           | 缺点                             |
+| -------------- | -------- | -------- | -------------- | -------------------------------- |
+| 命令式对象管理 | 对象     | 测试     | 简单           | 只能操作活动对象，无法审计和跟踪 |
+| 命令式对象配置 | 文件     | 开发     | 可以审计、跟踪 | 项目大时，配置文件多，操作麻烦   |
+| 声明式对象配置 | 目录     | 开发     | 支持目录操作   | 意外情况下难以调试               |
+
+### 命令式对象管理
+
+**Kubectl命令**
+
+kubectl时Kubernetes集群的命令行工具，通过它能够对集群本身进行管理，并能够路在集群上进行容器化应用的安装部署。kubectl命令的语法格式：
+
+```shell
+kubectl [command] [type] [name] [flags]
+```
+
+* **command**：指定要对资源执行的操作，比如：create、get、delete
+* **type**：指定资源类型，比如：deployment、pod、service
+* **name**：指定资源的名称，名称大小写敏感
+* **flags**：指定额外的可选参数
+
+```shell
+#查看所有pod
+kubectl get pod
+
+#查看某个Pod详情
+kubectl get pod <pod_name>
+
+#查看某个pod，以yaml格式展示结果
+kubectl get pod <pod_name> -o yaml
+```
+
+**资源类型**
+
+kubernetes中所有的内容都抽象为资源，可以通过如下的命令进行查看：
+
+```shell
+kubectl api-resources
+```
+
+**常用Command总结**
+
+| 分类       | 命令         | 说明                           |
+| ---------- | ------------ | ------------------------------ |
+| 基本命令   | create       | 创建一个资源                   |
+|            | edit         | 编辑一个资源                   |
+|            | get          | 获取一个资源                   |
+|            | patch        | 更新一个资源                   |
+|            | delete       | 删除一个资源                   |
+|            | explain      | 展示资源文档                   |
+| 运行和调试 | run          | 在集群中运行一个指定的镜像     |
+|            | expose       | 暴露资源为Service              |
+|            | describe     | 显示资源内部详细信息           |
+|            | logs         | 输出容器在pod中的日志          |
+|            | attach       | 进入运行中的容器里面           |
+|            | exec         | 执行容器中的一个命令           |
+|            | cp           | 在Pod内外复制文件              |
+|            | rollout      | 管理资源的发布，首次展示       |
+|            | scale        | 扩容或缩容Pod的数量            |
+|            | autoscale    | 自动调整Pod的数量              |
+| 高级命令   | apply        | 通过文件对资源进行配置         |
+|            | label        | 更新资源上的标签信息           |
+| 其他命令   | cluster-info | 显示集群信息                   |
+|            | version      | 显示当前Server和Client版本信息 |
+
+**常用资源type总结**
+
+| 分类          | 资源名称                 | 缩写   | 资源作用        |
+| ------------- | ------------------------ | ------ | --------------- |
+| 集群级别资源  | nodes                    | no     | 集群组成部分    |
+|               | namespaces               | ns     | 隔离Pod         |
+| Pod资源       | pods                     | po     | 装载容器        |
+| Pod资源控制器 | replicationController    | rc     | 控制Pod资源     |
+|               | replicaSets              | rs     | 控制Pod资源     |
+|               | deployments              | deploy | 控制Pod资源     |
+|               | daemonsets               | ds     | 控制Pod资源     |
+|               | jobs                     |        | 控制Pod资源     |
+|               | cronjobs                 | cj     | 控制Pod资源     |
+|               | horizontalPodAutoScalers | hpa    | 控制Pod资源     |
+|               | statefulsets             | sts    | 控制Pod资源     |
+| 服务发现资源  | services                 | svc    | 同一Pod对外接口 |
+|               | ingress                  | ing    | 同一Pod对外接口 |
+| 存储资源      | volumeAttachments        |        | 存储            |
+|               | persistentVolumes        | pv     | 存储            |
+|               | persistentVolumeClaims   | pvc    | 存储            |
+| 配置资源      | configMaps               | cm     | 配置            |
+|               | secrets                  |        | 配置            |
+|               |                          |        |                 |
+
+下面以一个namespace的创建和删除简单演示下命令的使用：
+
+```shell
+#创建一个namespace
+kubectl create namespace dev
+
+#获取namespace
+kubectl get ns
+
+#在此namespace下创建并运行一个nginx的Pod
+kubectl run pod --image=nginx -n dev
+
+#查看新创建的Pod
+kubectl get pod -n dev
+
+#删除指定的Pod
+kubectl delete pod pod-67567887798-pcw7x
+
+#删除指定的namespace
+kubectl delete ns dev
+```
+
+> 扩展：kubectl可以在node节点上运行吗？
+>
+> kubectl的运行需要进行配置的，它的配置文件是$HOME/.kube，如果想要在node节点上运行该命令，需要将master节点上的.kube文件复制到node节点上，即在master节点上执行下面操作
+>
+> mkdir -p $HOME/.kube  																										#在Node节点上执行
+>
+> sudo scp /etc/kubernetes/admin.conf root@k8snode2:/root/.kube/config  #在Master节点上执行
+>
+> sudo chown $(id -u):$(id -g) $HOME/.kube/config													#在Node节点上执行
 
 
 
+### 命令式对象配置
 
 
+
+### 声明式对象配置
 
 
 
