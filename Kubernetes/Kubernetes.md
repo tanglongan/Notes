@@ -405,13 +405,23 @@ kube-proxy-qmjrh                 1/1     Running   0          52m
 kube-scheduler-node01            1/1     Running   0          52m
 ```
 
+# 第三章：资源管理
 
+## 资源管理介绍
 
+在Kubernetes中，所有对象都抽象为资源，用户需要通过操作资源来管理Kubernetes。
 
+> Kubernetes本质上就是一个集群系统，用户在集群中部署各种服务，所谓的部署服务，其实就是在Kubernetes集群中部署一个个容器，并在容器中部署应用程序。
+>
+> Kubernetes中最小管理单元是Pod而不是容器，所以只能将容器运行在Pod中，而Kubernetes中不会直接直接管理Pod，而是通过**控制器**来管理Pod
+>
+> Pod可以提供服务之后，就要考虑如何访问Pod中的服务，Kubernetes中提供了**Service**资源来实现这个功能
+>
+> 如果数据需要持久化，Kubernetes中提供了**存储**系统
+>
+> 学习Kubernetes的核心，就是学习如何对集群上的**Pod**、**Pod控制器**、**Service**、**存储**等各种资源进行操作
 
-
-
-
+<img src=".images/image-20210518194812066.png" alt="image-20210518194812066" style="zoom:50%;" />
 
 
 
