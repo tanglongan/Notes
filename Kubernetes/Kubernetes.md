@@ -15,7 +15,7 @@ Kubernetes本质上是`` 一组服务器集群``，它可以在集群的每个�
 * **版本回退**：如果发现新版本的程序有问题，可以立即回退到原来的版本
 * **存储编排**：可以根据容器自身需求自动创建存储卷
 
-![](/Users/tanglongan/Documents/Notes/Kubernetes/.images/Kubernetes/image-20210517101357672.png)
+![image-20210517101357672-1621294481602](.images/image-20210517101357672-1621294481602.png)
 
 ## Kubernetes组件
 
@@ -39,7 +39,7 @@ Kubernetes本质上是`` 一组服务器集群``，它可以在集群的每个�
 >
 > **containerRuntime**：负责节点上容器的各种操作
 
-![image-20210517110543319](/Users/tanglongan/Documents/Notes/Kubernetes/.images/Kubernetes/image-20210517110543319.png)
+![image-20210517110543319-1621294493072](.images/image-20210517110543319-1621294493072.png)
 
 下面部署一个Nginx服务来说明Kubernetes系统各个组件之间的调用关系：
 
@@ -77,7 +77,7 @@ Kubernetes集群大体上分为两类：一主多从和多主多从
 * **一主多从**：一台Master和多台Node节点，搭建简单，但有单机故障风险，使用与测试环境
 * **多主多从**：多太Master和多台Node节点，搭建麻烦，可靠性高，使用于生产环境
 
-![image-20210517183611168](/Users/tanglongan/Documents/Notes/Kubernetes/.images/Kubernetes/image-20210517183611168.png)
+![image-20210517183611168](.images/image-20210517183611168.png)
 
 ### 安装方式
 
@@ -89,11 +89,11 @@ Kubernetes有多种部署方式，目前主流的方式有kubeadm、minikube、�
 
 ### 主机规划
 
-|  作用  |     IP地址      |  操作系统  |         配置         |
-| :----: | :-------------: | :--------: | :------------------: |
-| Master | 192.168.109.101 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
-| Node1  | 192.168.109.102 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
-| Node2  | 192.168.109.103 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
+|  作用  |    IP地址     |  操作系统  |         配置         |
+| :----: | :-----------: | :--------: | :------------------: |
+| Master | 192.168.8.134 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
+| Node1  | 192.168.8.136 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
+| Node2  | 192.168.8.137 | CentOS 7.5 | 2CPUs、2GMem、50GVol |
 
 ## 环境搭建
 
@@ -108,11 +108,11 @@ Kubernetes有多种部署方式，目前主流的方式有kubeadm、minikube、�
 
 Kubernetes部署环境要求
 
-- 一台或多态机器
-- 硬件要求：内存2GB或2GB+，CPU 2核或CPU 2核+ Required
-- 集群内各个机器之间能互相通信 Required
-- 集群内各个机器可以访问外网，需要拉取镜像，非必须要求 Optional
-- 禁止swap分区 Required
+> - 一台或多态机器
+> - 硬件要求：内存2GB或2GB+，CPU 2核或CPU 2核+ Required
+> - 集群内各个机器之间能互相通信 Required
+> - 集群内各个机器可以访问外网，需要拉取镜像，非必须要求 Optional
+> - 禁止swap分区 Required
 
 ### 系统参数
 
@@ -125,7 +125,12 @@ systemctl disable firewalld
 sed -i 's/enforcing/disabled/' /etc/selinux/config
 
 #关闭swap，k8s禁止虚拟内存以提高性能
+<<<<<<< HEAD
 swapoff -a 													#临时关闭
+=======
+#swap分区指的是虚拟内存分区，它的作用是在物理内存使用完之后，将磁盘空间虚拟成内存来使用，启用swap社会对系统#的性能产生非常负面的影响，因此Kubernetes要求每个节点都要禁用swap分区，但是如果因为某些原因确实不能关闭#swap分区的，就需要在集群安装过程中通过明确的参数进行配置说明
+swapoff -a 							#临时关闭
+>>>>>>> 0d3891364efcd3687510d042e1a52d0f81b3e830
 sed -ri 's/.*swap.*/#&/' /etc/fstab #永久关闭
 
 #在master添加hosts
@@ -168,6 +173,32 @@ yum install docker-ce-19.03.13 -y
 #6.配置docker随系统启动，运行docker服务及查看docker服务状态
 systemctl start docker
 systemctl enable docker.service
+=======
+
+#更新docker的yum源
+curl https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+
+#安装指定版本的Docker
+yum install docker-ce-19.03.13 -y
+
+#6.配置docker随系统启动，运行docker服务及查看docker服务状态
+systemctl start docker
+systemctl enable docker.service
+```
+
+### 添加阿里云yum源
+
+```shell
+#添加yum源
+cat > /etc/yum.repos.d/kubernetes.repo <<EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
 ```
 
 ### 安装Kubernetes
@@ -191,6 +222,10 @@ EOF
 
 ```shell
 #安装 kubeadm、kubectl、kubelet
+=======
+安装kubectl、kubeadm、kubelet
+
+#安装
 yum install kubelet-1.19.4 kubeadm-1.19.4 kubectl-1.19.4 -y
 
 #配置开启启动
@@ -213,9 +248,7 @@ kubelet --version
 
 上述几个步骤完成之后，重启系统，这样确保配置项都生效了
 
-### 集群初始化
-
-#### 初始化master
+初始化master
 
 ```shell
 #在Master节点的机器上执行初始化
@@ -331,46 +364,195 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 接下来就要把Node节点加入Kubernetes Master中
 
+### 集群初始化
 
+说先部署和初始化Master节点
+
+```shell
+#在Master节点的机器上执行初始化
+kubeadm init \
+--apiserver-advertise-address=192.168.8.134 \
+--image-repository registry.aliyuncs.com/google_containers \
+--kubernetes-version v1.19.4 \
+--service-cidr=10.96.0.0/12 \
+--pod-network-cidr=10.244.0.0/16
+```
+
+- `--apiserver-advertise-address` ：api-server的广播地址，即Master节点的地址
+- `--image-repository` ：容器的镜像仓库地址
+- `--kubernetes-version` ：Kubernetes的版本号
+- `--service-cidr=10.96.0.0/12` ：Pod网络
+- `--pod-network-cidr=10.244.0.0/16` ：k8s支持多种网络组件，比如Flannel、Weave、Calico等。后续使用kube-flannel网络组件，所以必须要设置这个参数，10.244.0.0.0/16是Flannel的默认网段，可以自定义修改。
+
+service-CIDR的选取不能和Podcidr及本机网络有重叠或冲突，一般可以选择一个本机网络和PodCIDR都没有用到的私有网络地址段，网络无重叠冲突即可。初始化命令执行完毕之后，**先不要clear输出结果**，如下会用到输出里的部分内容，如下：
+
+```shell
+[root@node01 ~]# kubeadm init \
+> --apiserver-advertise-address=172.16.210.10 \
+> --image-repository registry.aliyuncs.com/google_containers \
+> --kubernetes-version v1.19.4 \
+> --service-cidr=10.96.0.0/12 \
+> --pod-network-cidr=10.244.0.0/16
+W0512 10:36:35.475889    1634 configset.go:348] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+[init] Using Kubernetes version: v1.19.4
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+	[WARNING FileExisting-tc]: tc not found in system path
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "ca" certificate and key
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local node01] and IPs [10.96.0.1 172.16.210.10]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-ca" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "etcd/ca" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [localhost node01] and IPs [172.16.210.10 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [localhost node01] and IPs [172.16.210.10 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Generating "sa" key and public key
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "kubelet.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Starting the kubelet
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+[etcd] Creating static Pod manifest for local etcd in "/etc/kubernetes/manifests"
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests". This can take up to 4m0s
+[apiclient] All control plane components are healthy after 14.004274 seconds
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.19" in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Skipping phase. Please see --upload-certs
+[mark-control-plane] Marking the node node01 as control-plane by adding the label "node-role.kubernetes.io/master=''"
+[mark-control-plane] Marking the node node01 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+[bootstrap-token] Using token: 2wl1mh.n5q5kw40gkcj6saq
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to get nodes
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the "cluster-info" ConfigMap in the "kube-public" namespace
+[kubelet-finalize] Updating "/etc/kubernetes/kubelet.conf" to point to a rotatable kubelet client certificate and key
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.8.134:6443 --token 2wl1mh.n5q5kw40gkcj6saq \
+    --discovery-token-ca-cert-hash sha256:f2bca0e2d2616b586d725f921dd578d70e4281356b0fa123eca0595cf4d3eb5d
+```
+
+上面输出结果中最下面已有加入Node节点的命令，后面继续使用。如果希望在所有节点上都能访问Kubernetes的API server，需要执行如下的命令进行配置
+
+```shell
+#主节点配置
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+#工作节点
+mkdir -p $HOME/.kube
+sudo scp /etc/kubernetes/admin.conf root@node02:/root/.kube/config #只有这一行主节点上执行
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+接下来就要把Node节点加入Kubernetes Master中
+
+接下来部署和初始化Node节点，如下命令是**在Node节点上执行**的
+
+```shell
+#将当前Node节点添加到集群中
+kubeadm join 192.168.8.134:6443 --token 2wl1mh.n5q5kw40gkcj6saq \
+--discovery-token-ca-cert-hash sha256:f2bca0e2d2616b586d725f921dd578d70e4281356b0fa123eca0595cf4d3eb5d
+
+#查看已加入k8s集群的节点
+kubectl get nodes
+```
+
+默认情况下，token创建24小时之后就过期了，查看token和重新生成token的命令
+
+```shell
+#重新获取token
+kubectl token create
+
+#重新获取hash
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+
+#kubeadm join的命令格式
+kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+```
+
+在 `kubectl get nodes`之后，可以看到节点状态是NotReady，这是因为节点没有彼此感知，需要安装网络查件。
 
 ### 安装网络查件
 
-
-
-
-
-主机名解析
-
-编写三台主机的/etc/hosts文件，添加内容如下
-
-```text
-192.168.188.100 master
-192.168.188.101 node1
-192.168.188.101 node2
-```
-
-时间同步
+配置kube-flanne网络插件。首先在**Master**节点上应用网络插件
 
 ```shell
-systemctl start chronyd
-systemctl enable chronyd
-date
+#下载并应用网络插件的kube-flannel.yml文件
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+#查看节点状态
+kubectl get nodes
+
+#查看运行时容器Pod
+kubectl get pods -n kube-system
 ```
 
-禁用iptables和firewalld
+上面的命令执行结束之后，可以看到节点状态已经是Ready了，输出结果如下：
 
 ```shell
-systemctl stop firewalld
-systemctl disable firewalld
-systemctl stop iptables
-systemctl disable iptables
+#集群环境中应用网络查件
+[root@node01 ~]# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+podsecuritypolicy.policy/psp.flannel.unprivileged created
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.apps/kube-flannel-ds created
+
+#可以看到现在所有节点都已经Ready
+[root@node01 ~]# kubectl get nodes
+NAME     STATUS   ROLES    AGE   VERSION
+node01   Ready    master   49m   v1.19.4
+node02   Ready    <none>   43m   v1.19.4
+
+#查看kube-system命名空间内的Pod，可以看到每个Pod里面都是只有一个容器
+[root@node01 ~]# kubectl get pods -n kube-system
+NAME                             READY   STATUS    RESTARTS   AGE
+coredns-6d56c8448f-478tx         1/1     Running   0          52m
+coredns-6d56c8448f-wl2d6         1/1     Running   0          52m
+etcd-node01                      1/1     Running   0          52m
+kube-apiserver-node01            1/1     Running   0          52m
+kube-controller-manager-node01   1/1     Running   0          52m
+kube-flannel-ds-dwxmz            1/1     Running   0          3m23s
+kube-flannel-ds-zq5qt            1/1     Running   0          3m23s
+kube-proxy-fblcj                 1/1     Running   0          46m
+kube-proxy-qmjrh                 1/1     Running   0          52m
+kube-scheduler-node01            1/1     Running   0          52m
 ```
-
-
-
-
-
-
 
 
 

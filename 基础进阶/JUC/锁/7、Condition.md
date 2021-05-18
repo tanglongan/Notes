@@ -174,7 +174,7 @@ private void doSignal(Node first) {
 
 await和signal就像一个开关控制着等待方线程和通知方线程，他们之间的关系用下图描述
 
-<img src=".images/20200410231120.png" alt="image-20200408130106336" style="zoom: 33%;" />
+<img src=".images/20200410231120.png" alt="image-20200408130106336" style="zoom: 50%;" />
 
 线程awaitThread先通过lock.lock()方法成功获取到锁之后，调用了condition.await()进入等待队列；
 
