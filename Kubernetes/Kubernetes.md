@@ -179,21 +179,6 @@ systemctl start docker
 systemctl enable docker.service
 ```
 
-### 添加阿里云yum源
-
-```shell
-#添加yum源
-cat > /etc/yum.repos.d/kubernetes.repo <<EOF
-[kubernetes]
-name=Kubernetes
-baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-EOF
-```
-
 ### 安装Kubernetes
 
 添加阿里云的yum源，安装会更快
@@ -376,7 +361,7 @@ openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outfor
 kubeadm join <master-host>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
-### 安装kube-flannel查件
+### 安装kube-flannel插件
 
 在 `kubectl get nodes`之后，可以看到节点状态是NotReady，这是因为节点没有彼此感知，需要安装网络查件。配置kube-flanne网络插件。首先在**Master**节点上应用网络插件：
 
