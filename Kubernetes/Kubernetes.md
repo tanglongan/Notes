@@ -523,52 +523,193 @@ kubectl api-resources
 
 **常用Command总结**
 
-| 分类       | 命令         | 说明                           |
-| ---------- | ------------ | ------------------------------ |
-| 基本命令   | create       | 创建一个资源                   |
-|            | edit         | 编辑一个资源                   |
-|            | get          | 获取一个资源                   |
-|            | patch        | 更新一个资源                   |
-|            | delete       | 删除一个资源                   |
-|            | explain      | 展示资源文档                   |
-| 运行和调试 | run          | 在集群中运行一个指定的镜像     |
-|            | expose       | 暴露资源为Service              |
-|            | describe     | 显示资源内部详细信息           |
-|            | logs         | 输出容器在pod中的日志          |
-|            | attach       | 进入运行中的容器里面           |
-|            | exec         | 执行容器中的一个命令           |
-|            | cp           | 在Pod内外复制文件              |
-|            | rollout      | 管理资源的发布，首次展示       |
-|            | scale        | 扩容或缩容Pod的数量            |
-|            | autoscale    | 自动调整Pod的数量              |
-| 高级命令   | apply        | 通过文件对资源进行配置         |
-|            | label        | 更新资源上的标签信息           |
-| 其他命令   | cluster-info | 显示集群信息                   |
-|            | version      | 显示当前Server和Client版本信息 |
+<table>
+	<tr>
+		<td>分类</td>
+		<td>命令</td>
+		<td>说明</td>
+	</tr>
+	<tr>
+		<td rowspan='6'>基本命令</td>
+		<td>create</td>
+        <td>创建一个资源</td>
+	</tr>
+    <tr>
+		<td>edit</td>
+        <td>编辑一个资源</td>
+	</tr>
+		<td>get</td>
+        <td>获取一个资源</td>
+	</tr>
+    <tr>
+		<td>patch</td>
+        <td>更新一个资源</td>
+	</tr>
+    <tr>
+		<td>delete</td>
+        <td>删除一个资源</td>
+	</tr>
+    <tr>
+		<td>explain</td>
+        <td>显示资源文档</td>
+	</tr>
+	<tr>
+		<td rowspan='10'>运行与调试</td>
+		<td>run</td>
+        <td>在集群中运行一个指定的镜像</td>
+	</tr>
+    <tr>
+		<td>expose</td>
+        <td>暴露资源为Service</td>
+	</tr>
+		<td>describe</td>
+        <td>显示资源内部详细信息</td>
+	</tr>
+    <tr>
+		<td>logs</td>
+        <td>输出容器在pod中的日志</td>
+	</tr>
+    <tr>
+		<td>attach</td>
+        <td>进入运行中的容器里面</td>
+	</tr>
+    <tr>
+		<td>exec</td>
+        <td>执行容器中的一个命令</td>
+	</tr>
+	<tr>
+		<td>cp</td>
+        <td>在Pod内外复制文件</td>
+	</tr>
+    <tr>
+		<td>rollout</td>
+        <td>管理资源的发布，首次展示</td>
+	</tr>
+    <tr>
+		<td>scale</td>
+        <td>扩容或缩容Pod的数量</td>
+	</tr>
+    <tr>
+		<td>autoscale</td>
+        <td>自动调整Pod的数量</td>
+	</tr>
+	<tr>
+		<td rowspan='2'>高级命令</td>
+		<td>apply</td>
+        <td>通过文件对资源进行配置</td>
+	</tr>
+	<tr>
+		<td>label</td>
+        <td>更新资源上的标签信息</td>
+	</tr>
+</table>
 
 **常用资源type总结**
 
-| 分类          | 资源名称                 | 缩写   | 资源作用        |
-| ------------- | ------------------------ | ------ | --------------- |
-| 集群级别资源  | nodes                    | no     | 集群组成部分    |
-|               | namespaces               | ns     | 隔离Pod         |
-| Pod资源       | pods                     | po     | 装载容器        |
-| Pod资源控制器 | replicationController    | rc     | 控制Pod资源     |
-|               | replicaSets              | rs     | 控制Pod资源     |
-|               | deployments              | deploy | 控制Pod资源     |
-|               | daemonsets               | ds     | 控制Pod资源     |
-|               | jobs                     |        | 控制Pod资源     |
-|               | cronjobs                 | cj     | 控制Pod资源     |
-|               | horizontalPodAutoScalers | hpa    | 控制Pod资源     |
-|               | statefulsets             | sts    | 控制Pod资源     |
-| 服务发现资源  | services                 | svc    | 同一Pod对外接口 |
-|               | ingress                  | ing    | 同一Pod对外接口 |
-| 存储资源      | volumeAttachments        |        | 存储            |
-|               | persistentVolumes        | pv     | 存储            |
-|               | persistentVolumeClaims   | pvc    | 存储            |
-| 配置资源      | configMaps               | cm     | 配置            |
-|               | secrets                  |        | 配置            |
-|               |                          |        |                 |
+<table>
+  <tr>
+    <td>分类</td>
+    <td>命令</td>
+    <td>缩写</td>
+    <td>说明</td>
+  </tr>
+  <tr>
+    <td rowspan="2">集群级别资源</td>
+    <td>nodes</td>
+    <td>no</td>
+    <td>集群组成部分</td>
+  </tr>
+  <tr>
+    <td>namespaces</td>
+    <td>ns</td>
+    <td>隔离Pod</td>
+  </tr>
+  <tr>
+    <td>Pod资源</td>
+    <td>pods</td>
+    <td>po</td>
+    <td>装载容器</td>
+  </tr>
+  <tr>
+    <td rowspan="8">Pod资源管理器</td>
+    <td>replicationController</td>
+    <td>rc</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>replicaSets</td>
+    <td>rs</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>deployments</td>
+    <td>deploy</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>daemonsets</td>
+    <td>ds</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>jobs</td>
+    <td>jb</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>cronjobs</td>
+    <td>cj</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>horizontalPodAutoScalers</td>
+    <td>hpa</td>
+    <td>控制Pod资源</td>
+  </tr>
+  <tr>
+    <td>statefulsets</td>
+    <td>sts</td>
+    <td>控制Pod资源</td>
+  </tr>
+    <tr>
+    <td rowspan="2">服务发现资源</td>
+    <td>services</td>
+    <td>svc</td>
+    <td>统一Pod访问入口</td>
+  </tr>
+  <tr>
+    <td>ingress</td>
+    <td>ing</td>
+    <td>统一Pod访问入口</td>
+  </tr>
+   <tr>
+    <td rowspan="3">存储资源</td>
+    <td>volumeAttachments</td>
+    <td>rc</td>
+    <td>存储</td>
+  </tr>
+  <tr>
+    <td>persistentVolumes</td>
+    <td>pv</td>
+    <td>存储</td>
+  </tr>
+  <tr>
+    <td>persistentVolumeClaims</td>
+    <td>pvc</td>
+    <td>存储</td>
+  </tr>
+    <tr>
+    <td rowspan="2">配置资源</td>
+    <td>configMaps</td>
+    <td>cm</td>
+    <td>配置</td>
+  </tr>
+  <tr>
+    <td>secrets</td>
+    <td></td>
+    <td>存储</td>
+  </tr>
+</table>
 
 下面以一个namespace的创建和删除简单演示下命令的使用：
 
@@ -602,73 +743,11 @@ kubectl delete ns dev
 >
 > sudo chown $(id -u):$(id -g) $HOME/.kube/config													#在Node节点上执行
 
-
-
 ### 命令式对象配置
 
 
 
 ### 声明式对象配置
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
