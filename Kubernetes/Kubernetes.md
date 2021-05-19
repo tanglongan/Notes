@@ -1167,6 +1167,57 @@ Commercial support is available at
 </html>
 ```
 
+**删除Pod**
+
+由于当前Pod是通过Pod控制器创建和监控的，一旦发现Pod死亡，会立即重建，因此想要删除Pod，就需要删除控制器
+
+```shell
+# 查看存在的Pod
+[root@node01 ~]# kubectl get pod -n dev -o wide
+NAME    READY   STATUS    RESTARTS   AGE   IP           NODE     NOMINATED NODE   READINESS GATES
+nginx   1/1     Running   0          22m   10.244.1.5   node02   <none>           <none>
+
+# 查看Pod相关的控制器
+[root@node01 ~]# kubectl get deployments
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+nginx   1/1     1            1           5d4h
+
+# 删除Pod对应的控制器，它管理的所有Pod也会自动关联删除
+[root@node01 ~]# kubectl delete deployment nginx
+deployment.apps "nginx" deleted
+
+# 查看dev名称空间下的名为nginx的Pod
+[root@node01 ~]# kubectl get pod -n dev
+```
+
+**基于配置的操作**
+
+首先新建Pod定义文件，pod-nginx.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: dev
+spec:
+  containers:
+    - name: pod
+      image: nginx
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: nginx-port
+          containerPort: 80
+          protocol: TCP
+```
+
+然后使用命令创建和删除Pod
+
+```shell
+kubectl create -f pod-nginx.yaml
+kubectl delete -f pod-nginx.yaml
+```
+
 
 
 
