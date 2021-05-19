@@ -823,6 +823,201 @@ Namespace是Kubernetes中非常重要的资源，它的主要作用就是**用�
 * 默认情况下，Kubernetes集群中所有的Pod都是可以互相访问的。但是实际中可能不想让两个Pod之间进行互相访问，那么此时就可以将两个Pod划分到不同的Namespace下。Kubernetes通过将不同Pod划分到不同的Namespace，形成逻辑上的“组”，以便于将不同组的资源进行隔离和使用。
 * 可以通过Kubernetes的授权机制，将不同的Namespace授权给不同的租户进行管理，这样就形成了不同租户之间资源的隔离。此时还能结合Kubernetes的资源配额机制，限定不同租户能占用的资源，例如使用CPU使用量，内存使用量等来实现租户的资源管理。
 
+<img src=".images/image-20210519134313318.png" alt="image-20210519134313318" style="zoom:50%;" />
+
+Kubernetes集群在启动之后会创建几个默认的namespace
+
+```shell
+[root@node01 ~]# kubectl get namespace
+NAME              STATUS   AGE
+default           Active   7d3h		# 默认命名空间，所有未指定namespace的对象都会被分配到默认命名空间中
+kube-node-lease   Active   7d3h		# 集群节点之间的心跳维护，v1.13版本加入
+kube-public       Active   7d3h		# 此命名空间下的所有资源都可以被任何用户访问到，包括未认证用户
+kube-system       Active   7d3h		# 所有由Kubernetes创建的系统资源都在这个命名空间下
+```
+
+**常用操作**
+
+```shell
+# 创建命名空间
+[root@node01 ~]# kubectl create ns dev
+namespace/dev created
+
+# 查看所有命名空间，可以看到刚刚创建dev
+[root@node01 ~]# kubectl get ns
+NAME              STATUS   AGE
+dev               Active   10s
+default           Active   7d3h
+kube-node-lease   Active   7d3h
+kube-public       Active   7d3h
+kube-system       Active   7d3h
+
+#指定输出格式，-o 参数执行输出格式，常用格式有：wide、json、yaml
+[root@node01 ~]# kubectl get ns -n dev -o yaml
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    creationTimestamp: "2021-05-12T02:38:26Z"
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:phase: {}
+      manager: kube-apiserver
+      operation: Update
+      time: "2021-05-12T02:38:26Z"
+    name: default
+    resourceVersion: "161"
+    selfLink: /api/v1/namespaces/default
+    uid: 72b05d32-5825-4574-982d-a7b3ed164672
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    creationTimestamp: "2021-05-19T06:13:34Z"
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:phase: {}
+      manager: kubectl-create
+      operation: Update
+      time: "2021-05-19T06:13:34Z"
+    name: dev
+    resourceVersion: "86679"
+    selfLink: /api/v1/namespaces/dev
+    uid: 1a9a2829-a802-4603-ba56-b5b737789f27
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    creationTimestamp: "2021-05-12T02:38:25Z"
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:phase: {}
+      manager: kube-apiserver
+      operation: Update
+      time: "2021-05-12T02:38:25Z"
+    name: kube-node-lease
+    resourceVersion: "43"
+    selfLink: /api/v1/namespaces/kube-node-lease
+    uid: ca8a76ea-017b-4680-8a1b-bfd503a39f0b
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    creationTimestamp: "2021-05-12T02:38:25Z"
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:phase: {}
+      manager: kube-apiserver
+      operation: Update
+      time: "2021-05-12T02:38:25Z"
+    name: kube-public
+    resourceVersion: "38"
+    selfLink: /api/v1/namespaces/kube-public
+    uid: 15331503-01cd-4dfd-b55d-ee8b8c52a224
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    creationTimestamp: "2021-05-12T02:38:25Z"
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:phase: {}
+      manager: kube-apiserver
+      operation: Update
+      time: "2021-05-12T02:38:25Z"
+    name: kube-system
+    resourceVersion: "11"
+    selfLink: /api/v1/namespaces/kube-system
+    uid: 14a96976-e57a-47b4-ba64-778746e974d0
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
+
+#查看命名空间详情
+kubectl describe ns <ns_name>
+
+#删除命名空间
+kubectl delete ns <ns_name>
+[root@node01 ~]# kubectl delete ns dev
+namespace "dev" deleted
+```
+
+**配置方式**
+
+首先准备一个yaml文件：ng-dev.yaml
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+```
+
+然后执行对应命令就可以创建和删除了
+
+```shell
+# 通过yaml文件创建ns
+[root@node01 ~]# kubectl create -f ns-dev.yaml
+namespace/dev created
+
+#查询所有ns
+[root@node01 ~]# kubectl get ns
+NAME              STATUS   AGE
+dev               Active   18s
+default           Active   7d3h
+kube-node-lease   Active   7d3h
+kube-public       Active   7d3h
+kube-system       Active   7d3h
+
+#删除通过指定yaml创建ns
+[root@node01 ~]# kubectl delete -f ns-dev.yaml
+namespace "dev" deleted
+```
+
+## Pod
+
+现在已经知道，程序要运行，必须运行在容器中，而容器是运行在Pod中。
+
+Pod是Kubernetes最小的调度单元，Pod可以认为是对容器包装，一个Pod里面包含一个或多个容器。
+
 
 
 
