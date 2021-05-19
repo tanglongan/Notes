@@ -603,7 +603,6 @@ kubectl api-resources
         <td>更新资源上的标签信息</td>
 	</tr>
 </table>
-
 **常用资源type总结**
 
 <table>
@@ -745,9 +744,117 @@ kubectl delete ns dev
 
 ### 命令式对象配置
 
+命令式对象配置方式：**命令 + yaml资源清单文件**
 
+1. 创建一个nginxpod.yaml文件，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginxpod
+  namespace: dev
+spec:
+  containers:
+    - name: nginx-containers
+      image: nginx:1.17.1
+```
+
+2. 执行create命令创建资源
+
+```shell
+# 根据yaml文件创建定义的资源对象
+kubectl create -f nginxpod.yaml
+```
+
+3. 执行get命令查看资源
+
+```shell
+# 查看yaml文件中定义的所有资源对象
+kubectl get -f nginxpod.yaml
+```
+
+4. 执行delete命令，删除创建的资源
+
+```shell
+# 删除yaml文件中定义的所有资源对象
+kubectl delete -f nginxpod.yaml
+```
 
 ### 声明式对象配置
+
+声明式对象配置与命令式对象配置非常相似，但是它只有一个命令：**apply**
+
+```shell
+#第一次执行如下命令，发现创建了资源
+kubectl apply -f nginxpod.yaml
+
+#第二次执行如下命令，发现资源没有变动
+kubectl apply -f nginxpod.yaml
+```
+
+* 声明式对象配置就是使用apply描述一个资源的最终状态（在yaml中声明状态）
+
+* 使用apply操作资源：
+    * 如果资源不存在，就新建，等同于**kubectl create**
+    * 如果资源已存在，就更新，等同于**kubectl patch**
+
+> 推荐使用的方式
+>
+> * 创建更新资源：推荐使用声明式对象配置，即kubectl apply -f pod.yaml
+> * 删除所有资源：推荐使用命令式对象配置，即kubectl delete -f pod.yaml
+> * 查询资源信息：推荐使用命令式对象管理，即kubectl get/describe <resource_name>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
