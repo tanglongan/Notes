@@ -1329,7 +1329,7 @@ Pod控制器用于Pod管理，确保Pod资源符合预期的状态，当Pod的�
 
 在Kubernetes中Pod控制器的种类有很多，这里暂时只介绍Deployment。
 
-
+<img src=".images/image-20210519232417672.png" alt="image-20210519232417672" style="zoom:67%;" />
 
 
 
