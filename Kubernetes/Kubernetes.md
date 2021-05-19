@@ -1018,6 +1018,157 @@ namespace "dev" deleted
 
 Pod是Kubernetes最小的调度单元，Pod可以认为是对容器包装，一个Pod里面包含一个或多个容器。
 
+<img src=".images/image-20210519142554767.png" alt="image-20210519142554767" style="zoom:50%;" />
+
+Kubernetes集群启动之后，集群的各个组件也是以Pod形式运行的，可以通过下面命令查看：
+
+```shell
+[root@node01 ~]# kubectl get pod -n kube-system
+NAME                             READY   STATUS    RESTARTS   AGE
+coredns-6d56c8448f-478tx         1/1     Running   3          7d3h
+coredns-6d56c8448f-wl2d6         1/1     Running   3          7d3h
+etcd-node01                      1/1     Running   3          7d3h
+kube-apiserver-node01            1/1     Running   3          7d3h
+kube-controller-manager-node01   1/1     Running   5          7d3h
+kube-flannel-ds-7wpvv            1/1     Running   1          28h
+kube-flannel-ds-jchzn            1/1     Running   1          28h
+kube-flannel-ds-wlc2b            1/1     Running   1          28h
+kube-proxy-4hcmb                 1/1     Running   1          28h
+kube-proxy-fblcj                 1/1     Running   3          7d3h
+kube-proxy-qmjrh                 1/1     Running   3          7d3h
+kube-scheduler-node01            1/1     Running   5          7d3h
+```
+
+**创建并运行**
+
+Kubernetes没有提供直接操作Pod的命令，而是通过**Pod控制器**来进行操作的
+
+命令格式：kubectl run <pod_controller_name> [args]
+
+常用参数：
+
+* **--image**：指定Pod镜像
+* **--port**：指定端口
+* **--namespace**：指定名称空间
+
+```shell
+#先准备名称空间
+[root@node01 ~]# kubectl create ns dev
+namespace/dev created
+
+#创建Pod
+[root@node01 ~]# kubectl run nginx --image=nginx --port=80 --namespace dev
+pod/nginx created
+
+#查看指定名称空间下的Pod列表
+[root@node01 ~]# kubectl get pod -n dev
+NAME    READY   STATUS    RESTARTS   AGE
+nginx   1/1     Running   0          2m11s
+
+#查看指定Pod详情
+[root@node01 ~]# kubectl describe pod nginx
+Name:         nginx-6799fc88d8-qj924
+Namespace:    default
+Priority:     0
+Node:         node02/172.16.210.11
+Start Time:   Fri, 14 May 2021 10:13:25 +0800
+Labels:       app=nginx
+              pod-template-hash=6799fc88d8
+Annotations:  <none>
+Status:       Running
+IP:           10.244.1.4
+IPs:
+  IP:           10.244.1.4
+Controlled By:  ReplicaSet/nginx-6799fc88d8
+Containers:
+  nginx:
+    Container ID:   docker://2d6487f53e47a2eae7fb888e39af72f8bc16c6d6feabaf643fd61dce238830ef
+    Image:          nginx
+    Image ID:       docker-pullable://nginx@sha256:df13abe416e37eb3db4722840dd479b00ba193ac6606e7902331dcea50f4f1f2
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Wed, 19 May 2021 13:45:18 +0800
+    Last State:     Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 18 May 2021 09:49:12 +0800
+      Finished:     Tue, 18 May 2021 13:44:37 +0800
+    Ready:          True
+    Restart Count:  2
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-g65t8 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  default-token-g65t8:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-g65t8
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason                  Age                From     Message
+  ----     ------                  ----               ----     -------
+  Warning  FailedMount             54m                kubelet  MountVolume.SetUp failed for volume "default-token-g65t8" : failed to sync secret cache: timed out waiting for the condition
+  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "b29ddfeb0d0fb8353c334e722bd9713d833acf53459b6fddaca1846e14a4ab1c" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
+  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "fdddb462c2f3b7e8cc6c1e16bdc54f7c6a6d0b7523a674b6031ecb205742fb34" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
+  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "785bb6e34ac532ad2ce14d8c6146e30796550d93852840b009a8b3e93a556415" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
+  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "066084ab73a4cec13f0c55a9086cc23d3de60f294603500e3b50e7dbf5568ba0" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
+  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "7d02c7b612afe5b4ecb5d06f43baaa513540d5a67d82d3ea1988b34bd1e3bfcd" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
+  Normal   SandboxChanged          54m (x6 over 54m)  kubelet  Pod sandbox changed, it will be killed and re-created.
+  Normal   Pulling                 54m                kubelet  Pulling image "nginx"
+  Normal   Pulled                  54m                kubelet  Successfully pulled image "nginx" in 5.1962157s
+  Normal   Created                 54m                kubelet  Created container nginx
+  Normal   Started                 54m                kubelet  Started container nginx 
+```
+
+**访问Pod服务**
+
+```shell
+#查看Pod部署信息（其中可以看到部署的节点、节点IP、运行状态等）
+[root@node01 ~]# kubectl get pods -n dev -o wide
+NAME    READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE   READINESS GATES
+nginx   1/1     Running   0          4m50s   10.244.1.5   node02   <none>           <none>
+
+#访问Pod中的Nginx容器服务
+[root@node01 ~]# curl http://10.244.1.5:80
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
+
+
 
 
 
