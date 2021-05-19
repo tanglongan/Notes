@@ -1114,20 +1114,6 @@ QoS Class:       BestEffort
 Node-Selectors:  <none>
 Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
                  node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
-Events:
-  Type     Reason                  Age                From     Message
-  ----     ------                  ----               ----     -------
-  Warning  FailedMount             54m                kubelet  MountVolume.SetUp failed for volume "default-token-g65t8" : failed to sync secret cache: timed out waiting for the condition
-  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "b29ddfeb0d0fb8353c334e722bd9713d833acf53459b6fddaca1846e14a4ab1c" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
-  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "fdddb462c2f3b7e8cc6c1e16bdc54f7c6a6d0b7523a674b6031ecb205742fb34" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
-  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "785bb6e34ac532ad2ce14d8c6146e30796550d93852840b009a8b3e93a556415" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
-  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "066084ab73a4cec13f0c55a9086cc23d3de60f294603500e3b50e7dbf5568ba0" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
-  Warning  FailedCreatePodSandBox  54m                kubelet  Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "7d02c7b612afe5b4ecb5d06f43baaa513540d5a67d82d3ea1988b34bd1e3bfcd" network for pod "nginx-6799fc88d8-qj924": networkPlugin cni failed to set up pod "nginx-6799fc88d8-qj924_default" network: open /run/flannel/subnet.env: no such file or directory
-  Normal   SandboxChanged          54m (x6 over 54m)  kubelet  Pod sandbox changed, it will be killed and re-created.
-  Normal   Pulling                 54m                kubelet  Pulling image "nginx"
-  Normal   Pulled                  54m                kubelet  Successfully pulled image "nginx" in 5.1962157s
-  Normal   Created                 54m                kubelet  Created container nginx
-  Normal   Started                 54m                kubelet  Started container nginx 
 ```
 
 **访问Pod服务**
