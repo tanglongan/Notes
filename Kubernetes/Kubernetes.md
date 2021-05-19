@@ -812,6 +812,19 @@ kubectl apply -f nginxpod.yaml
 > * 删除所有资源：推荐使用命令式对象配置，即kubectl delete -f pod.yaml
 > * 查询资源信息：推荐使用命令式对象管理，即kubectl get/describe <resource_name>
 
+# 第四章：实战入门
+
+本章将在Kubernetes集群中部署一个Nginx服务，并且在外部能够访问它。
+
+## Namespace
+
+Namespace是Kubernetes中非常重要的资源，它的主要作用就是**用来实现多套环境的资源隔离**或者**多租户的资源隔离**
+
+* 默认情况下，Kubernetes集群中所有的Pod都是可以互相访问的。但是实际中可能不想让两个Pod之间进行互相访问，那么此时就可以将两个Pod划分到不同的Namespace下。Kubernetes通过将不同Pod划分到不同的Namespace，形成逻辑上的“组”，以便于将不同组的资源进行隔离和使用。
+* 可以通过Kubernetes的授权机制，将不同的Namespace授权给不同的租户进行管理，这样就形成了不同租户之间资源的隔离。此时还能结合Kubernetes的资源配额机制，限定不同租户能占用的资源，例如使用CPU使用量，内存使用量等来实现租户的资源管理。
+
+
+
 
 
 
