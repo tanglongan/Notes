@@ -1204,9 +1204,130 @@ kubectl create -f pod-nginx.yaml
 kubectl delete -f pod-nginx.yaml
 ```
 
+## Label
 
+Label是Kubernetes系统中的一个重要概念。它的主要作用就是在资源上添加标识，用来对它们进行区分和选择。
 
+**标签特性**
 
+* 一个Label会以Key:Value的形式附加到各种对象上，如Node、Pod、Service等
+* 一个资源对象可以定义任意数量的Label，同一个Label也可以添加到任意数量的资源对象上去
+* Label通常在资源对象定义时确定，当然也可以在对象创建后动态添加或删除
+
+> 一些常用的Label如下：
+>
+> * 版本标签："version":"release"、"version":"stable"
+> * 环境标签："environment":"dev"、"environment":"test"、"environment":"prod"
+> * 架构标签："tier":"fontend"、"tier":"backend"
+
+标签定义完毕之后，还要考虑到标签的选择，这就要使用Label Selector，即：
+
+* Label用于给某个资源对象定义标识
+* Label Selector用于查询和筛选拥有某些标签的资源对象
+
+**标签选择**
+
+当前有两种Label Selector：
+
+* 基于等式的Label Selector：
+  * name = slave：选择所有包含label中的key="name"且value="slave"的对象
+  * env != production：选择所有包含Label中的key="env"且value="production"的对象
+* 基于集合的Label Selector：
+  * name in (master, slave)：选择所有包含Label中的key="name"且value="master"或的value="slave"对象
+  * name not in (frontend)：选择所有包含Label中的key="name"且value=不等于"frontend"对象
+
+标签的选择可以使用多个，此时将多个Label Selector进行组合，使用逗号","进行分割即可。例如：
+
+```Text
+name = slave,env != production
+name not in(frontend), env!=production
+```
+
+**命令方式**
+
+```shell
+#为Pod添加标签
+kubectl label pod <pod_name> [k1=v1 kn=vn]
+#为Pod更新标签
+kubectl label pod <pod_name> [k1=v1 kn=vn] --overwrite=true
+#查看Pod上的标签
+kubectl get pod <pod_name> --show-labels
+#通过标签筛选Pod
+kubectl get pod  -l [k1=v1 kn=vn] --show-labels
+```
+
+以上面的pod-nginx.yaml为基础操作实践如下：
+
+```shell
+#通过yaml创建Pod
+[root@node01 ~]# kubectl create -f pod-nginx.yaml
+pod/nginx created
+
+#查看Pod
+[root@node01 ~]# kubectl get pod -n dev
+NAME    READY   STATUS    RESTARTS   AGE
+nginx   1/1     Running   0          16s
+
+#为Pod添加标签  version=1.0
+[root@node01 ~]# kubectl label pod nginx version=1.0 -n dev
+pod/nginx labeled
+
+#查看Pod上的标签
+[root@node01 ~]# kubectl get pod nginx -n dev --show-labels
+NAME    READY   STATUS    RESTARTS   AGE   LABELS
+nginx   1/1     Running   0          38s   version=1.0
+
+#更新Pod上的标签值
+[root@node01 ~]# kubectl label pod nginx version=2.8 -n dev --overwrite=true
+pod/nginx labeled
+
+#查看Pod上的标签
+[root@node01 ~]# kubectl get pod nginx -n dev --show-labels
+NAME    READY   STATUS    RESTARTS   AGE     LABELS
+nginx   1/1     Running   0          4m47s   version=2.8
+
+#通过标签筛选Pod
+[root@node01 ~]# kubectl get pod -n dev -l version=2.8 --show-labels
+NAME    READY   STATUS    RESTARTS   AGE    LABELS
+nginx   1/1     Running   0          6m6s   version=2.8
+
+#删除标签
+kubectl label pod nginx version -n dev
+```
+
+**配置方式**
+
+yaml文件中增加Label部分，这部分直接给Pod上增加标签
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: dev
+  labels:
+  	version: "3.0"
+  	env: "test"
+spec:
+  containers:
+    - name: pod
+      image: nginx
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: nginx-port
+          containerPort: 80
+          protocol: TCP
+```
+
+然后执行对应的更新命令：kubectl apply -f  pod-nginx.yaml
+
+## Deployment
+
+在Kubernetes中，Pod是最小的控制单元，但是Kubernetes很少直接控制Pod，一般都是通过Pod控制器来完成的。
+
+Pod控制器用于Pod管理，确保Pod资源符合预期的状态，当Pod的资源出现故障时，会尝试进行重启或重建Pod。
+
+在Kubernetes中Pod控制器的种类有很多，这里暂时只介绍Deployment。
 
 
 
