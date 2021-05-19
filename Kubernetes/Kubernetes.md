@@ -1018,7 +1018,7 @@ namespace "dev" deleted
 
 Pod是Kubernetes最小的调度单元，Pod可以认为是对容器包装，一个Pod里面包含一个或多个容器。
 
-<img src=".images/image-20210519142554767.png" alt="image-20210519142554767" style="zoom:50%;" />
+![image-20210519214849020](.images/image-20210519214849020.png)
 
 Kubernetes集群启动之后，集群的各个组件也是以Pod形式运行的，可以通过下面命令查看：
 
@@ -1135,8 +1135,8 @@ Events:
 ```shell
 #查看Pod部署信息（其中可以看到部署的节点、节点IP、运行状态等）
 [root@node01 ~]# kubectl get pods -n dev -o wide
-NAME    READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE   READINESS GATES
-nginx   1/1     Running   0          4m50s   10.244.1.5   node02   <none>           <none>
+NAME    READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE
+nginx   1/1     Running   0          4m50s   10.244.1.5   node02   <none>    <none>
 
 #访问Pod中的Nginx容器服务
 [root@node01 ~]# curl http://10.244.1.5:80
@@ -1174,8 +1174,8 @@ Commercial support is available at
 ```shell
 # 查看存在的Pod
 [root@node01 ~]# kubectl get pod -n dev -o wide
-NAME    READY   STATUS    RESTARTS   AGE   IP           NODE     NOMINATED NODE   READINESS GATES
-nginx   1/1     Running   0          22m   10.244.1.5   node02   <none>           <none>
+NAME  READY STATUS  RESTARTS AGE IP           NODE   NOMINATED
+nginx 1/1   Running 0        22m 10.244.1.5   node02 <none>
 
 # 查看Pod相关的控制器
 [root@node01 ~]# kubectl get deployments
