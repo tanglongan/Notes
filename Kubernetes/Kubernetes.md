@@ -1412,6 +1412,14 @@ Kubenetes通过Service来解决这些问题。Service可以看作是一组同类
 
 <img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;" />
 
+```shell
+#暴露Service
+kubectl expose deploy nginx --image=nginx:1.17.1 --name=nginx-svc1 --type=ClusterIP --port=80 --target-port=80 -n dev
+
+#查看Service
+
+```
+
 
 
 
