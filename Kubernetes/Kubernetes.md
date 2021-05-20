@@ -1412,13 +1412,72 @@ Kubenetes通过Service来解决这些问题。Service可以看作是一组同类
 
 <img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;" />
 
+**命令方式**
+
+* **创建集群内部可以访问的Service**
+
 ```shell
 #暴露Service
+#这里产生一个ClusterIP，就是Service的IP，在Service的生命周期内，这个IP是不会变化的
 kubectl expose deploy nginx --image=nginx:1.17.1 --name=nginx-svc1 --type=ClusterIP --port=80 --target-port=80 -n dev
 
 #查看Service
+kubectl get svc svc-nginx -n dev -o wide
 
+curl http://NodeIP:80
 ```
+
+* **创建集群外部可以访问的Service**
+
+```shell
+#上面创建Service的type类型是ClusterIP，这个ip地址只能在集群内部访问
+#如果需要在集群外部可以访问，就需要将type设置为NodePort
+kubectl expose deploy nginx --image=nginx:1.17.1 --name=nginx-svc1 --type=NodePort --port=80 --target-port=80 -n dev
+
+#此时查看，会发现NodePort类型的Service，而且有一对Port
+kubectl get svc svc-nginx1 -n dev -o wide
+
+#在k8s集群之外的主机上访问
+http://NodeIP:NodePort
+```
+
+* **删除Service**
+
+```shell
+kubectl delete svc svc-nginx1 -n dev
+```
+
+**配置方式**
+
+首先创建一个svc-nginx.yaml，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-nginx
+  namespace: dev
+spec:
+  clusterIP: 172.16.210.134 #这一行可写可不写，因为下面指定了ClusterIP类型。如果不指定就系统分配一个IP
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    run: nginx
+  type: ClusterIP
+```
+
+然后通过命令创建/删除Service
+
+```shell
+kubectl apply -f svc-nginx.yaml
+kubectl delete -f svc-nginx.yaml
+```
+
+# 第五章：Pod详解
+
+## Pod结构
 
 
 
