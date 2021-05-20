@@ -1331,7 +1331,86 @@ Pod控制器用于Pod管理，确保Pod资源符合预期的状态，当Pod的�
 
 <img src=".images/image-20210519232417672.png" alt="image-20210519232417672" style="zoom:67%;" />
 
+**命令操作**
 
+语法格式：kubectl run deploy_name [arg]
+
+* --image：指定Pod的镜像
+* --port：指定端口
+* --replicas：指定Podcast副本数量
+* --namespace：指定namespace
+
+```shell
+#创建一个Nginx的Pod，有3个副本，端口80
+kubectl run nginx --image=nginx:1.17.1 --port=80 --replicas=3 -n dev
+
+#查看创建的Pod
+kubectl get pod -n dev
+
+#查看deploy的信息
+kubectl get deploy -n dev
+kubectl get deploy -n dev -o wide
+
+#查看deploy的详细信息
+kubectl describe deploy nginx -n dev
+
+#删除deploy（关联的pod也会删除）
+kubectl delete deploy nginx -n dev
+```
+
+**配置操作**
+
+首先创建deploy-nginx.yaml文件，内容如下
+
+```yaml
+apiVersion: app/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      run: nginx
+
+  template:
+    metadata:
+      labels:
+        run: nginx
+    spec:
+      containers:
+        - name: pod
+          image: nginx
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: nginx-port
+              containerPort: 80
+              protocol: TCP
+```
+
+然后通过对应的命令创建deployment
+
+```shell
+#通过deploy-nginx.yaml文件创建资源对象
+kubectl create -f deploy-nginx.yaml
+
+#删除以deploy-nginx.yaml文件定义而创建的所有资源对象
+kubectl delete -f deploy-nginx.yaml
+```
+
+## Service
+
+通过上面的学习，已经能够利用Deployment来创建提供具有高可用性的服务。
+
+虽然每个Pod都会分配一个单独的Pod IP。然而却存在如下几个问题：
+
+1. Pod IP会随着Pod的重建产生变化
+2. Pod IP仅仅是集群内部可见的虚拟IP，外部无法访问
+
+Kubenetes通过Service来解决这些问题。Service可以看作是一组同类Pod的**对外的访问入口**。借助Service，应用可以方便地实现服务发现和负载均衡。
+
+<img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;" />
 
 
 
