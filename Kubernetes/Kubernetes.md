@@ -1408,7 +1408,7 @@ kubectl delete -f deploy-nginx.yaml
 1. Pod IP会随着Pod的重建产生变化
 2. Pod IP仅仅是集群内部可见的虚拟IP，外部无法访问
 
-Kubenetes通过Service来解决这些问题。Service可以看作是一组同类Pod的**对外的访问入口**。借助Service，应用可以方便地实现服务发现和负载均衡。
+Kubenetes通过Service来解决这些问题。Service可以看作是一组同类Pod的**对外的访问入口**。借助Service，应用可以方便地实现**服务发现**和**负载均衡**。
 
 <img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;" />
 
