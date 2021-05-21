@@ -2114,7 +2114,7 @@ spec:
             command: ["/usr/sbin/nginx", "-s", "quit"]
 ```
 
-命名操作如下：
+示例操作如下：
 
 ```shell
 # 创建Pod
