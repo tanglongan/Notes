@@ -1555,17 +1555,17 @@ spec:                           #Pod中容器的详细定义，Required
       nodeSelector: object                    #节点选择，设置nodeSelector表示将Pod调度到包含这个标签的节点上
       imagePullSecrets: String                #拉取镜像时设置secret，以key:value形式设置
       hostNetwork: false                      #是否使用主机网络模式，默认false；如果设置true，表示使用宿主机网络
-  volumes:                #在Pod上定义共享存储卷列表
-    - name: String        #存储卷名称
-      emptyDir: {}        #类型为emptyDir的存储卷，与Pod有相同生命周期的临时目录，为空值
-      hostPath:           #类型为hostPath的存储卷，将会挂载Pod所在宿主机的目录
-        path: String      #Pod所在宿主机的目录，该目录将在容器中挂载
-      secret:             #类型为secret的存储卷，在容器内部挂载集群中预定义的secret对象
+  volumes:                                    #在Pod上定义共享存储卷列表
+    - name: String                            #存储卷名称
+      emptyDir: {}                            #类型为emptyDir的存储卷，与Pod有相同生命周期的临时目录，为空值
+      hostPath:                               #类型为hostPath的存储卷，将会挂载Pod所在宿主机的目录
+        path: String                          #Pod所在宿主机的目录，该目录将在容器中挂载
+      secret:                                 #类型为secret的存储卷，在容器内部挂载集群中预定义的secret对象
         secretName: String
         items:
           - key: String
           - path: String
-      configMap:          #类型为configMap的存储卷，挂载预定义的configMap对象到容器内部
+      configMap:                              #类型为configMap的存储卷，挂载预定义的configMap对象到容器内部
         name: String
         items:
           - key: String
