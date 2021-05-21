@@ -2309,8 +2309,8 @@ Events:
   Type     Reason     Age   From               Message
   ----     ------     ----  ----               -------
   Normal   Scheduled  38s   default-scheduler  Successfully assigned dev/pod-liveness-httpget to node02
-  Normal   Pulled     14s 	kubelet            Container image "nginx:1.17.1" already present on machine
-  Normal   Created    14s 	kubelet            Created container main-container
+  Normal   Pulled     14s   kubelet            Container image "nginx:1.17.1" already present on machine
+  Normal   Created    14s   kubelet            Created container main-container
   Normal   Started    14s   kubelet            Started container main-container
   Normal   Killing    14s   kubelet            Container main-container failed liveness probe, will be restarted
   Warning  Unhealthy  4s    kubelet            Liveness probe failed: HTTP probe failed with statuscode: 404
