@@ -1481,7 +1481,7 @@ kubectl delete -f svc-nginx.yaml
 
 ### Pod结构
 
-![image-20210519214849020](.images/image-20210519214849020.png)
+<img src=".images/image-20210519214849020.png" alt="image-20210519214849020" style="zoom: 80%;" />
 
 每个Pod都可以包含一个或多个容器，这些容器可以分为两类：
 
@@ -1495,46 +1495,46 @@ kubectl delete -f svc-nginx.yaml
 下面是Pod的资源清单
 
 ```yaml
-apiVersion: v1				#版本，v1代表稳定版本，Required
-kind: pod					#类型，Pod，Required
-metadata:					#元数据，表示资源的标识信息
-  name: String				#元数据，表示Pod的名称
-  namespace: String			#元数据，表示Pod的名称空间，默认为default
-  labels:					#元数据，表示Pod的标签列表，以标签的键/值对
-    - key: value			#元数据，标签，以标签的键/值对
-  annotations:				#元数据，表示Pod的注解列表，以注解的键/值对
+apiVersion: v1									#版本，v1代表稳定版本，Required
+kind: pod												#类型，Pod，Required
+metadata:												#元数据，表示资源的标识信息
+  name: String									#元数据，表示Pod的名称
+  namespace: String							#元数据，表示Pod的名称空间，默认为default
+  labels:												#元数据，表示Pod的标签列表，以标签的键/值对
+    - key: value								#元数据，标签，以标签的键/值对
+  annotations:									#元数据，表示Pod的注解列表，以注解的键/值对
     - key: value
-spec:						#Pod中容器的详细定义，Required
-  containers:				#Pod中容器列表，可以有多个容器，Required
-    - name: String			#容器名称，Required
-      image: String			#容器的镜像，Required
+spec:														#Pod中容器的详细定义，Required
+  containers:										#Pod中容器列表，可以有多个容器，Required
+    - name: String							#容器名称，Required
+      image: String							#容器的镜像，Required
       imagePullPolicy: [Always|Never|IfNotPresent]	#容器的获取策略
-      command: [String]		#容器启动之后执行的命令，不配置时，执行容器内部的命令
-      args: [String]		#容器启动命令的参数列表
-      workingDir: String	#容器的工作目录
-      volumeMounts:			#挂在到容器内部的存储卷
-        - name: String		#引用Pod定义中volume标签下定义的共享存储卷的名称
-          mountPath: String	#存储卷在容器内部挂在的绝对路径
-          readonly: boolean	#存储卷是否只读
-      ports:				#容器需要暴露的端口列表
-      	- name: String			#端口名称
-        	containerPort: int	#容器要暴露的端口
-        	hostPort: int		#与容器端口对应映射的宿主机的端口
-        	protocol: String	#端口协议，支持TCP/UDP，默认TCP
-      env:						#容器运行之前需要设置的环境变量列表
-        - name: String			#环境变量名
-          value: String			#环境变量值
-      resources:				#资源限制和请求的设置
-        limits:					#资源限制
-          cpu: String			#CPU数量限制，容器启动时，用于docker run --cpu-quota参数
-          memory: String		#内存限制，单位可以是MiB/GiB/MB/GB
-        requests:				#资源请求
-          cpu: String			#CPU请求数量，容器启动时，用于docker run --cpu-shares参数
-          memory: String		#内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
-      livenessProbe:			#Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
-        exec:					#1、exec命令方式检测容器运行健康状态
-          command: [String]		#exec命令方式要执行的脚本或命令
-        httpGet:			    #2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
+      command: [String]					#容器启动之后执行的命令，不配置时，执行容器内部的命令
+      args: [String]						#容器启动命令的参数列表
+      workingDir: String				#容器的工作目录
+      volumeMounts:							#挂在到容器内部的存储卷
+        - name: String					#引用Pod定义中volume标签下定义的共享存储卷的名称
+          mountPath: String			#存储卷在容器内部挂在的绝对路径
+          readonly: boolean			#存储卷是否只读
+      ports:										#容器需要暴露的端口列表
+      	- name: String					#端口名称
+        	containerPort: int		#容器要暴露的端口
+        	hostPort: int					#与容器端口对应映射的宿主机的端口
+        	protocol: String			#端口协议，支持TCP/UDP，默认TCP
+      env:											#容器运行之前需要设置的环境变量列表
+        - name: String					#环境变量名
+          value: String					#环境变量值
+      resources:								#资源限制和请求的设置
+        limits:									#资源限制
+          cpu: String						#CPU数量限制，容器启动时，用于docker run --cpu-quota参数
+          memory: String				#内存限制，单位可以是MiB/GiB/MB/GB
+        requests:								#资源请求
+          cpu: String						#CPU请求数量，容器启动时，用于docker run --cpu-shares参数
+          memory: String				#内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
+      livenessProbe:						#Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
+        exec:										#1、exec命令方式检测容器运行健康状态
+          command: [String]			#exec命令方式要执行的脚本或命令
+        httpGet:			    			#2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
           path: String
           port: int
           host: String
@@ -1542,25 +1542,25 @@ spec:						#Pod中容器的详细定义，Required
           httpHeaders:
             - name: String
               value: String
-        tcpSocket:				#3、通过tcpSocket方式探测各容器的健康状态
+        tcpSocket:								#3、通过tcpSocket方式探测各容器的健康状态
           port: int
         initialDelaySeconds: int	#容器启动之后延迟多少秒再进行探测
-        timeoutSeconds: int			#对容器健康探测的超时时间
-        periodSeconds: int			#两次对容器健康检测的间隔时间
+        timeoutSeconds: int				#对容器健康探测的超时时间
+        periodSeconds: int				#两次对容器健康检测的间隔时间
         successThreshold: int
         failureThreshold: int
-        securityContext:						#安全配置
+        securityContext:											#安全配置
           privileged: false
       restartPolicy: [always|Never|onFailure]	#Pod重启策略
-      nodeSelector: object	    #节点选择，设置nodeSelector表示将Pod调度到包含这个标签的节点上
-      imagePullSecrets: String	#拉取镜像时设置secret，以key:value形式设置
-      hostNetwork: false   #是否使用主机网络模式，默认false；如果设置true，表示使用宿主机网络
-  volumes:				   #在Pod上定义共享存储卷列表
-    - name: String		   #存储卷名称
-      emptyDir: {}		   #类型为emptyDir的存储卷，与Pod有相同生命周期的临时目录，为空值
-      hostPath:			   #类型为hostPath的存储卷，将会挂载Pod所在宿主机的目录
-        path: String	   #Pod所在宿主机的目录，该目录将在容器中挂载
-      secret:			   #类型为secret的存储卷，在容器内部挂载集群中预定义的secret对象
+      nodeSelector: object	    							#节点选择，设置nodeSelector表示将Pod调度到包含这个标签的节点上
+      imagePullSecrets: String								#拉取镜像时设置secret，以key:value形式设置
+      hostNetwork: false   										#是否使用主机网络模式，默认false；如果设置true，表示使用宿主机网络
+  volumes:				   			#在Pod上定义共享存储卷列表
+    - name: String		   	#存储卷名称
+      emptyDir: {}		   	#类型为emptyDir的存储卷，与Pod有相同生命周期的临时目录，为空值
+      hostPath:			   		#类型为hostPath的存储卷，将会挂载Pod所在宿主机的目录
+        path: String	   	#Pod所在宿主机的目录，该目录将在容器中挂载
+      secret:			   			#类型为secret的存储卷，在容器内部挂载集群中预定义的secret对象
         secretName: String
         items:
           - key: String
@@ -2337,6 +2337,8 @@ FIELDS:
    failureThreshold     <integer>  # 连续探测失败多少次才被认定为失败。默认是3。最小值是1
    successThreshold     <integer>  # 连续探测成功多少次才被认定为成功。默认是1
 ```
+
+## Pod调度
 
 
 
