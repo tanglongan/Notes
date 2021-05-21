@@ -2295,15 +2295,15 @@ spec:
 创建Pod，观察结果：
 
 ```shell
-[root@node01 c5]# kubectl create -f pod-liveness-httpget.yaml
+[root@node01]> kubectl create -f pod-liveness-httpget.yaml
 pod/pod-liveness-httpget created
 
-[root@node01 c5]# kubectl get pod -n dev
+[root@node01]> kubectl get pod -n dev
 NAME                   READY   STATUS    RESTARTS   AGE
 pod-liveness-httpget   1/1     Running   0          13s
 
 
-[root@node01 c5]# kubectl describe pod pod-liveness-httpget -n dev
+[root@node01]> kubectl describe pod pod-liveness-httpget -n dev
 ......
 Events:
   Type     Reason     Age   From               Message
