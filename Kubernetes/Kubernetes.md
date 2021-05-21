@@ -1968,7 +1968,77 @@ spec:
 
 ### 初始化容器
 
+**初始化容器是在Pod的主容器启动之前要运行的容器，主要是做一些主容器的前置工作**，它具有两大特征：
 
+* 初始化容器必须运行完成直至结束，若某初始化容器运行失败，那么Kubernetes需要重启它直到成功完成
+* 初始化容器必须按照定义的顺序执行，当且仅当一个成功之后，后面的一个才能运行
+
+初始化容器有很多的应用场景，下面列出的是最常见的几个：
+
+* 提供主容器镜像中不具备的工具程序或自定义代码
+* 初始化容器要先于应用容器串行启动并运行完成，因此可用于延后应用容器的启动直至其依赖的条件得到满足
+
+接下来做一个案例，模拟下面这个需求：
+
+假设要以主容器来运行Nginx，但是需要在运行Nginx之前先要能够连接上MySQL和Redis所在服务器
+
+为了简化测试，事先规定好MySQL和Redis服务器的地址分别为：172.16.210.10、172.16.210.11
+
+创建pod-initcontainer.yaml，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-initcontainer
+  namespace: dev
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.17.1
+      ports:
+        - name: nginx-port
+          containerPort: 80
+  initContainers:
+    - name: test-mysql
+      image: busybox:1.30
+      command:
+        [
+          "sh",
+          "-c",
+          "until ping 172.16.210.13 -c 1; do echo waiting for mysql...; sleep 2; done;",
+        ]
+    - name: test-redis
+      image: busybox:1.30
+      command:
+        [
+          "sh",
+          "-c",
+          "until ping 172.16.210.11 -c 1; do echo waiting for redis...; sleep 2; done;",
+        ]
+```
+
+然后创建Pod，执行命令和输出结果如下：
+
+```shell
+# 创建Pod
+[root@node01]# kubectl create -f pod-initcontainer.yaml
+pod/pod-initcontainer created
+
+# 查看Pod状态
+# 发现Pod卡在第一个初始化容器的过程中，后面的容器不会运行“Init:0/2”（当前集群中没有172.16.210.13的主机，所以ping不通，阻塞住了）
+[root@node01]# kubectl get pod -n dev
+NAME                READY   STATUS     RESTARTS   AGE
+pod-initcontainer   0/1     Init:0/2   0          9s
+
+#动态查看Pod
+kubectl get pod pod-container -n dev -w
+
+#接下来修改yaml文件，将test-mysql容器command中IP修改为172.16.210.12
+#重新创建Pod就可以成功了
+kubectl delete pod pod-initcontainer -n dev
+kubectl create -f pod-initcontainer.yaml
+```
 
 
 
