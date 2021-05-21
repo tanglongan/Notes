@@ -2286,7 +2286,7 @@ spec:
         - name: nginx-port
           containerPort: 80
       livenessProbe:
-        httpGet:			#请求http://localhost:80/hello
+        httpGet: #请求http://localhost:80/hello
           scheme: HTTP
           port: 80
           path: /hello
