@@ -1670,11 +1670,13 @@ kubectl create -f pod-imagepullpolicy.yaml
 
 #查看Pod详情
 kubectl get pod pod-imagepullpolicy -n dev
-
-
 ```
 
+### 启动命令
 
+
+
+![image-20210521082111233](.images/image-20210521082111233.png)
 
 
 
