@@ -1512,29 +1512,29 @@ spec:                           #Pod中容器的详细定义，Required
       command: [String]         #容器启动之后执行的命令，不配置时，执行容器内部的命令
       args: [String]            #容器启动命令的参数列表
       workingDir: String        #容器的工作目录
-      volumeMounts:             #挂在到容器内部的存储卷
-        - name: String					#引用Pod定义中volume标签下定义的共享存储卷的名称
-          mountPath: String			#存储卷在容器内部挂在的绝对路径
-          readonly: boolean			#存储卷是否只读
-      ports:										#容器需要暴露的端口列表
-      	- name: String					#端口名称
-        	containerPort: int		#容器要暴露的端口
-        	hostPort: int					#与容器端口对应映射的宿主机的端口
-        	protocol: String			#端口协议，支持TCP/UDP，默认TCP
-      env:											#容器运行之前需要设置的环境变量列表
-        - name: String					#环境变量名
-          value: String					#环境变量值
-      resources:								#资源限制和请求的设置
-        limits:									#资源限制
-          cpu: String						#CPU数量限制，容器启动时，用于docker run --cpu-quota参数
-          memory: String				#内存限制，单位可以是MiB/GiB/MB/GB
-        requests:								#资源请求
-          cpu: String						#CPU请求数量，容器启动时，用于docker run --cpu-shares参数
-          memory: String				#内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
-      livenessProbe:						#Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
-        exec:										#1、exec命令方式检测容器运行健康状态
-          command: [String]			#exec命令方式要执行的脚本或命令
-        httpGet:			    			#2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
+      volumeMounts:             #挂载到容器内部的存储卷
+        - name: String          #引用Pod定义中volume标签下定义的共享存储卷的名称
+          mountPath: String     #存储卷在容器内部挂在的绝对路径
+          readonly: boolean     #存储卷是否只读
+      ports:                    #容器需要暴露的端口列表
+      	- name: String          #端口名称
+        	containerPort: int    #容器要暴露的端口
+        	hostPort: int         #与容器端口对应映射的宿主机的端口
+        	protocol: String      #端口协议，支持TCP/UDP，默认TCP
+      env:                      #容器运行之前需要设置的环境变量列表
+        - name: String          #环境变量名
+          value: String         #环境变量值
+      resources:                #资源限制和请求的设置
+        limits:	                #资源限制
+          cpu: String           #CPU数量限制，容器启动时，用于docker run --cpu-quota参数
+          memory: String        #内存限制，单位可以是MiB/GiB/MB/GB
+        requests:               #资源请求
+          cpu: String           #CPU请求数量，容器启动时，用于docker run --cpu-shares参数
+          memory: String        #内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
+      livenessProbe:            #Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
+        exec:                   #1、exec命令方式检测容器运行健康状态
+          command: [String]     #exec命令方式要执行的脚本或命令
+        httpGet:                #2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
           path: String
           port: int
           host: String
