@@ -1804,7 +1804,7 @@ FIELDS:
    containerPort	<integer> # required 容器要暴露和监听的端口，该端口是暴露在Pod的IP地址上
    hostIP	<string>					# 要将外部端口绑定到的主机IP，一般不设置
    hostPort	<integer> 			# 容器端口要在主机上公开的端口，一般不设置。如果设置，主机上只能运行容器的一个副本
-   protocol	<string> 		# 端口的协议，必须是UDP、TCP、SCTP之一，默认是TCP
+   protocol	<string> 				# 端口的协议，必须是UDP、TCP、SCTP之一，默认是TCP
 ```
 
 首先创建一个pod-ports.yaml，内容如下：
