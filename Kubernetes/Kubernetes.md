@@ -2268,6 +2268,76 @@ pod-liveness-tcpsocket   0/1     CrashLoopBackOff   4          2m50s
 # 当然接下来，可以修改成一个可以访问的端口，比如80，再试，结果就正常了......
 ```
 
+**方式三：HTTPGet**
+
+创建pod-livebess-httpget.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-hook-exec
+  namespace: dev
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.17.1
+      ports:
+        - name: nginx-port
+          containerPort: 80
+      livenessProbe:
+        httpGet:			#请求http://localhost:80/hello
+          scheme: HTTP
+          port: 80
+          path: /hello
+```
+
+创建Pod，观察结果：
+
+```shell
+[root@node01 c5]# kubectl create -f pod-liveness-httpget.yaml
+pod/pod-liveness-httpget created
+
+[root@node01 c5]# kubectl get pod -n dev
+NAME                   READY   STATUS    RESTARTS   AGE
+pod-liveness-httpget   1/1     Running   0          13s
+
+
+[root@node01 c5]# kubectl describe pod pod-liveness-httpget -n dev
+......
+Events:
+  Type     Reason     Age   From               Message
+  ----     ------     ----  ----               -------
+  Normal   Scheduled  38s   default-scheduler  Successfully assigned dev/pod-liveness-httpget to node02
+  Normal   Pulled     14s 	kubelet            Container image "nginx:1.17.1" already present on machine
+  Normal   Created    14s 	kubelet            Created container main-container
+  Normal   Started    14s   kubelet            Started container main-container
+  Normal   Killing    14s   kubelet            Container main-container failed liveness probe, will be restarted
+  Warning  Unhealthy  4s    kubelet            Liveness probe failed: HTTP probe failed with statuscode: 404
+# 观察上面信息，尝试访问路径，但是未找到,出现404错误
+# 稍等一会之后，再观察pod信息，就可以看到RESTARTS不再是0，而是一直增长
+
+[root@node01]> kubectl get pod -n dev
+NAME                   READY   STATUS    RESTARTS   AGE
+pod-liveness-httpget   1/1     Running   5          3m28s
+# 当然接下来，可以修改成一个可以访问的路径path，比如/，再试，结果就正常了......
+```
+
+至此，已经使用livenessProbe演示了三种探测方式，但是查看livenessProbe的子属性，会发现除了这三种方式还有一些其他的属性：
+
+```shell
+[root@node01]> kubectl explain pod.spec.containers.livenessProbe
+FIELDS:
+   exec <Object>  
+   tcpSocket    <Object>
+   httpGet      <Object>
+   initialDelaySeconds  <integer>  # 容器启动后等待多少秒执行第一次探测
+   timeoutSeconds       <integer>  # 探测超时时间。默认1秒，最小1秒
+   periodSeconds        <integer>  # 执行探测的频率。默认是10秒，最小1秒
+   failureThreshold     <integer>  # 连续探测失败多少次才被认定为失败。默认是3。最小值是1
+   successThreshold     <integer>  # 连续探测成功多少次才被认定为成功。默认是1
+```
+
 
 
 
