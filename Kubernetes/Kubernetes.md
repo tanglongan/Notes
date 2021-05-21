@@ -2131,6 +2131,48 @@ pod-hook-exec   1/1     Running   0          32s   10.244.1.17   node02   <none>
 postStart...
 ```
 
+### 容器探测
+
+容器探测用于检测容器中的应用实例是否正常工作，是保障业务可用性的一种传统机制。如果经过探测，实例的状态不符合预期，那么Kubernetes就会把该问题实例“移除”，不承担业务流量。Kubernetes提供了两种探针来实现容器探针，分别是：
+
+* liveness probe：存活性探测，用于检测应用实例当前是否能够处于正常运行状态，如果不是，k8s会重启容器
+* readiness probe：就绪性探测，用于检测应用实例当前是否可以接收请求，如果不能，k8s不会转发流程
+
+**liveness Probe决定是否重启；readiness probe决定了是否转发流量**
+
+上面两种探针目前支持三种探测方式：
+
+* exec命令：在容器内执行一次命令，如果命令执行的退出码是0，则认为程序正常，否则不正常
+
+```shell
+lifecycle:
+	exec:
+		command:
+		- cat
+		- /tmp/healthy
+```
+
+* TCPSocket：将尝试访问一个用户容器的端口，如果能够建立连接，则认为程序正常，否则不正常
+
+```shell
+lifecycle:
+	tcpSocket:
+		port: 8080
+```
+
+* HTTPGet：调用容器内Web应用的URL，如果返回的状态码是在200和399之间，则认为程序正常，否则不正常
+
+```shell
+lifecycle:
+	httpGet:
+		scheme:  HTTP
+		host： 172.16.210.12
+		port:  80
+		path:  /
+```
+
+
+
 
 
 
