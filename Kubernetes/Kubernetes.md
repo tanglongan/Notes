@@ -1599,9 +1599,9 @@ KIND:     Pod
 VERSION:  v1
 RESOURCE: containers <[]Object>
 FIELDS:
-    name <string>            #	容器名称
-    image <string>           #	容器需要的镜像
-    imagePullPolicy <string> #	镜像拉取策略
+    name <string>            # 容器名称
+    image <string>           # 容器需要的镜像
+    imagePullPolicy <string> # 镜像拉取策略
     command <[]string>       # 容器的启动命令列表，如不指定，使用打包时使用的启动命令
     args <[]string>          # 容器的启动命令需要的参数列表
     env <[]Object>           # 容器的环境变量的配置
