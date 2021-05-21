@@ -1895,8 +1895,8 @@ VERSION:  v1
 RESOURCE: resources <Object>
 
 FIELDS:
-   limits	<map[string]string>   #用于限制运行时容器的最大占用资源，当容器占用资源超过limits时会被终止，并进行重启
-   requests	<map[string]string> #用于设置容器需要的最小资源，如果环境资源不够，容器将无法启动
+   limits <map[string]string>  #用于限制运行时容器的最大占用资源，当容器占用资源超过limits时会被终止，并进行重启
+   requests <map[string]string> #用于设置容器需要的最小资源，如果环境资源不够，容器将无法启动
 ```
 
 可以通过**limits**和**requests**两个选项设置资源的上下限。接下来，编写一个测试案例，创建pod-resources.yaml，内容如下：
