@@ -2077,10 +2077,10 @@ lifecycle:
 lifecycle:
   postStart:
     httpGet:
-      scheme:  HTTP 				 #支持的协议 http或https
-      host： 172.16.210.12		#主机地址
-      port:  80 						 #端口号
-      path:  /  						 #URI地址
+      scheme:  HTTP         #支持的协议 http或https
+      host： 172.16.210.12  #主机地址
+      port:  80             #端口号
+      path:  /              #URI地址
 ```
 
 **一般来说，exec方式使用较多，HTTPGet次之，TCPSocket最后**。
