@@ -2146,7 +2146,7 @@ postStart...
 
 ```shell
 lifecycle:
-	exec:
+  exec:
     command:
     - cat
     - /tmp/healthy
@@ -2156,7 +2156,7 @@ lifecycle:
 
 ```shell
 lifecycle:
-	tcpSocket:
+  tcpSocket:
     port: 8080
 ```
 
