@@ -1911,14 +1911,13 @@ spec:
   containers:
     - name: nginx
       image: nginx:1.17.1
-      resources:				#资源配额
-        limits:					#资源限制（上限）
-          cpu: "2"				#CPU最多2核
-          memory: "2G"		    #内存最多2G
-        requests:				#请求资源（下限）
-          cpu: "1"				#CPU最少1核
-          memory: "1G"		    #内存最少1G
-
+      resources: #资源配额
+        limits: #资源限制（上限）
+          cpu: "2" #CPU最多2核
+          memory: "2G" #内存最多2G
+        requests: #请求资源（下限）
+          cpu: "1" #CPU最少1核
+          memory: "1G" #内存最少1G
 ```
 
 
