@@ -2147,9 +2147,9 @@ postStart...
 ```shell
 lifecycle:
 	exec:
-		command:
-		- cat
-		- /tmp/healthy
+    command:
+    - cat
+    - /tmp/healthy
 ```
 
 * TCPSocket：将尝试访问一个用户容器的端口，如果能够建立连接，则认为程序正常，否则不正常
@@ -2157,7 +2157,7 @@ lifecycle:
 ```shell
 lifecycle:
 	tcpSocket:
-		port: 8080
+    port: 8080
 ```
 
 * HTTPGet：调用容器内Web应用的URL，如果返回的状态码是在200和399之间，则认为程序正常，否则不正常
