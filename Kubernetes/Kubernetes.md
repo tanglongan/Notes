@@ -1603,10 +1603,10 @@ FIELDS:
     image <string>           #	容器需要的镜像
     imagePullPolicy <string> #	镜像拉取策略
     command <[]string>       # 容器的启动命令列表，如不指定，使用打包时使用的启动命令
-    args <[]string> 				 # 容器的启动命令需要的参数列表
+    args <[]string>          # 容器的启动命令需要的参数列表
     env <[]Object>           # 容器的环境变量的配置
     ports										 # 容器需要暴露的端口号列表
-    resources <Object>  		 # 资源显示和资源请求的设置
+    resources <Object>       # 资源显示和资源请求的设置
 ```
 
 ### 基本配置
