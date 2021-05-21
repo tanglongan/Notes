@@ -1495,14 +1495,14 @@ kubectl delete -f svc-nginx.yaml
 下面是Pod的资源清单
 
 ```yaml
-apiVersion: v1									#版本，v1代表稳定版本，Required
-kind: pod												#类型，Pod，Required
-metadata:												#元数据，表示资源的标识信息
-  name: String									#元数据，表示Pod的名称
-  namespace: String							#元数据，表示Pod的名称空间，默认为default
-  labels:												#元数据，表示Pod的标签列表，以标签的键/值对
-    - key: value								#元数据，标签，以标签的键/值对
-  annotations:									#元数据，表示Pod的注解列表，以注解的键/值对
+apiVersion: v1                  #版本，v1代表稳定版本，Required
+kind: pod                       #类型，Pod，Required
+metadata:                       #元数据，表示资源的标识信息
+  name: String                  #元数据，表示Pod的名称
+  namespace: String             #元数据，表示Pod的名称空间，默认为default
+  labels:                       #元数据，表示Pod的标签列表，以标签的键/值对
+    - key: value                #元数据，标签，以标签的键/值对
+  annotations:                  #元数据，表示Pod的注解列表，以注解的键/值对
     - key: value
 spec:														#Pod中容器的详细定义，Required
   containers:										#Pod中容器列表，可以有多个容器，Required
