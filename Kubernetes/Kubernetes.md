@@ -1922,6 +1922,52 @@ spec:
 
 ## Pod生命周期
 
+### 基本流程
+
+一般将Pod对象从创建到终止的这段时间范围称为Pod的生命周期，它主要包含如下的过程：
+
+* Pod创建过程
+* 运行初始化容器（init container）过程
+* 运行主容器（main container）过程
+    * 容器启动后钩子（post start）和容器终止前钩子（pre stop）
+    * 容器的存活性探测（liveness probe）、就绪性探测（readiness probe）
+* Pod终止状态
+
+整个生命周期中，Pod会出现5种状态，分别如下：
+
+* 挂起（Pending）：apiserver已经创建了Pod资源对象，但它尚未被调度完成或者仍然处于下载镜像的过程中
+* 运行中（Running）：Pod已经被调度到至某个节点，并且所有容器都已经被kubectl创建完成
+* 成功（Successed）：Pod中所有容器都已经成功终止并且不会被重启
+* 失败（Faild）：所有容器都已经被终止，但至少有一个容器终止失败，即容器返回了非0值的退出状态
+* 未知（Unknown）：apiserver无法正常获取Pod对象的状态信息，通常由网络通信失败所导致
+
+### 创建与终止
+
+**Pod的创建过程**
+
+1. 用户通过kubectl或其他apiserver客户端提交需要创建的Pod信息给apiServer
+2. apiServer开始生成Pod对象的信息，并将信息存入etcd，然后染回确认信息至客户端
+3. apiServer开始反映etcd中的Pod对象变化，其他组件使用watch机制来跟踪检查apiServer上的变动
+4. scheduler发现有新的Pod需要创建，开始为Pod分配主机并将结果信息更新到apiServer
+5. node节点上的kubelet发现有Pod调度过来了，尝试调用Docker创建启动容器，并将结果告知apiServer
+6. apiServer将接收到信息保存在etcd中
+
+![image-20210329153224452](.images/image-20210329153224452.png)
+
+**Pod的终止过程**
+
+1. 用户向apiServer发送删除pod对象的命令
+2. apiServcer中的pod对象信息会随着时间的推移而更新，在宽限期内（默认30s），pod被视为dead
+3. 将pod标记为terminating状态
+4. kubelet在监控到pod对象转为terminating状态的同时启动pod关闭过程
+5. 端点控制器监控到pod对象的关闭行为时将其从所有匹配到此端点的service资源的端点列表中移除
+6. 如果当前pod对象定义了preStop钩子处理器，则在其标记为terminating后即会以同步的方式启动执行
+7. pod对象中的容器进程收到停止信号
+8. 宽限期结束后，若pod中还存在仍在运行的进程，那么pod对象会收到立即终止的信号
+9. kubelet请求apiServer将此pod资源的宽限期设置为0从而完成删除操作，此时pod对于用户已不可见
+
+### 初始化容器
+
 
 
 
