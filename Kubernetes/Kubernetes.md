@@ -1797,7 +1797,7 @@ admin
 [root@node01]> kubectl explain pod.spec.containers.ports
 KIND:     Pod
 VERSION:  v1
-RESOURCE: ports <[]Object>  #数组，代表可以有多个容器
+RESOURCE: ports <[]Object> #数组，代表可以有多个容器
 
 FIELDS:
    name	<string>           # 端口名称，如果指定，必须保证name在pod中是唯一的
