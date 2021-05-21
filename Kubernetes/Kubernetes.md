@@ -375,7 +375,7 @@ kubectl get pods -n kube-system
 
 ```shell
 #集群环境中应用网络查件
-[root@node01 ~]# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+[root@node01 ~]> kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 podsecuritypolicy.policy/psp.flannel.unprivileged created
 clusterrole.rbac.authorization.k8s.io/flannel created
 clusterrolebinding.rbac.authorization.k8s.io/flannel created
@@ -384,14 +384,14 @@ configmap/kube-flannel-cfg created
 daemonset.apps/kube-flannel-ds created
 
 #可以看到现在所有节点都已经Ready
-[root@node01 ~]# kubectl get nodes
+[root@node01 ~]> kubectl get nodes
 NAME       STATUS   ROLES    AGE   VERSION
 k8smaster  Ready    master   49m   v1.19.4
 k8snode1   Ready    <none>   43m   v1.19.4
 k8snode2   Ready    <none>   45m   v1.19.4
 
 #查看kube-system命名空间内的Pod，可以看到每个Pod里面都是只有一个容器
-[root@node01 ~]# kubectl get pods -n kube-system
+[root@node01 ~]> kubectl get pods -n kube-system
 NAME                             READY   STATUS    RESTARTS   AGE
 coredns-6d56c8448f-478tx         1/1     Running   0          52m
 coredns-6d56c8448f-wl2d6         1/1     Running   0          52m
@@ -828,7 +828,7 @@ Namespace是Kubernetes中非常重要的资源，它的主要作用就是**用�
 Kubernetes集群在启动之后会创建几个默认的namespace
 
 ```shell
-[root@node01 ~]# kubectl get namespace
+[root@node01 ~]> kubectl get namespace
 NAME              STATUS   AGE
 default           Active   7d3h		# 默认命名空间，所有未指定namespace的对象都会被分配到默认命名空间中
 kube-node-lease   Active   7d3h		# 集群节点之间的心跳维护，v1.13版本加入
@@ -840,11 +840,11 @@ kube-system       Active   7d3h		# 所有由Kubernetes创建的系统资源都�
 
 ```shell
 # 创建命名空间
-[root@node01 ~]# kubectl create ns dev
+[root@node01 ~]> kubectl create ns dev
 namespace/dev created
 
 # 查看所有命名空间，可以看到刚刚创建dev
-[root@node01 ~]# kubectl get ns
+[root@node01 ~]> kubectl get ns
 NAME              STATUS   AGE
 dev               Active   10s
 default           Active   7d3h
@@ -853,7 +853,7 @@ kube-public       Active   7d3h
 kube-system       Active   7d3h
 
 #指定输出格式，-o 参数执行输出格式，常用格式有：wide、json、yaml
-[root@node01 ~]# kubectl get ns -n dev -o yaml
+[root@node01 ~]> kubectl get ns -n dev -o yaml
 apiVersion: v1
 items:
 - apiVersion: v1
@@ -976,7 +976,7 @@ kubectl describe ns <ns_name>
 
 #删除命名空间
 kubectl delete ns <ns_name>
-[root@node01 ~]# kubectl delete ns dev
+[root@node01 ~]> kubectl delete ns dev
 namespace "dev" deleted
 ```
 
@@ -995,11 +995,11 @@ metadata:
 
 ```shell
 # 通过yaml文件创建ns
-[root@node01 ~]# kubectl create -f ns-dev.yaml
+[root@node01 ~]> kubectl create -f ns-dev.yaml
 namespace/dev created
 
 #查询所有ns
-[root@node01 ~]# kubectl get ns
+[root@node01 ~]> kubectl get ns
 NAME              STATUS   AGE
 dev               Active   18s
 default           Active   7d3h
@@ -1008,7 +1008,7 @@ kube-public       Active   7d3h
 kube-system       Active   7d3h
 
 #删除通过指定yaml创建ns
-[root@node01 ~]# kubectl delete -f ns-dev.yaml
+[root@node01 ~]> kubectl delete -f ns-dev.yaml
 namespace "dev" deleted
 ```
 
@@ -1053,20 +1053,20 @@ Kubernetes没有提供直接操作Pod的命令，而是通过**Pod控制器**来
 
 ```shell
 #先准备名称空间
-[root@node01 ~]# kubectl create ns dev
+[root@node01 ~]> kubectl create ns dev
 namespace/dev created
 
 #创建Pod
-[root@node01 ~]# kubectl run nginx --image=nginx --port=80 --namespace dev
+[root@node01 ~]> kubectl run nginx --image=nginx --port=80 --namespace dev
 pod/nginx created
 
 #查看指定名称空间下的Pod列表
-[root@node01 ~]# kubectl get pod -n dev
+[root@node01 ~]> kubectl get pod -n dev
 NAME    READY   STATUS    RESTARTS   AGE
 nginx   1/1     Running   0          2m11s
 
 #查看指定Pod详情
-[root@node01 ~]# kubectl describe pod nginx
+[root@node01 ~]> kubectl describe pod nginx
 Name:         nginx-6799fc88d8-qj924
 Namespace:    default
 Priority:     0
@@ -1120,12 +1120,12 @@ Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
 
 ```shell
 #查看Pod部署信息（其中可以看到部署的节点、节点IP、运行状态等）
-[root@node01 ~]# kubectl get pods -n dev -o wide
+[root@node01 ~]> kubectl get pods -n dev -o wide
 NAME    READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE
 nginx   1/1     Running   0          4m50s   10.244.1.5   node02   <none>    <none>
 
 #访问Pod中的Nginx容器服务
-[root@node01 ~]# curl http://10.244.1.5:80
+[root@node01 ~]> curl http://10.244.1.5:80
 <!DOCTYPE html>
 <html>
 <head>
@@ -1159,21 +1159,21 @@ Commercial support is available at
 
 ```shell
 # 查看存在的Pod
-[root@node01 ~]# kubectl get pod -n dev -o wide
+[root@node01 ~]> kubectl get pod -n dev -o wide
 NAME  READY STATUS  RESTARTS AGE IP           NODE   NOMINATED
 nginx 1/1   Running 0        22m 10.244.1.5   node02 <none>
 
 # 查看Pod相关的控制器
-[root@node01 ~]# kubectl get deployments
+[root@node01 ~]> kubectl get deployments
 NAME    READY   UP-TO-DATE   AVAILABLE   AGE
 nginx   1/1     1            1           5d4h
 
 # 删除Pod对应的控制器，它管理的所有Pod也会自动关联删除
-[root@node01 ~]# kubectl delete deployment nginx
+[root@node01 ~]> kubectl delete deployment nginx
 deployment.apps "nginx" deleted
 
 # 查看dev名称空间下的名为nginx的Pod
-[root@node01 ~]# kubectl get pod -n dev
+[root@node01 ~]> kubectl get pod -n dev
 ```
 
 **基于配置的操作**
@@ -1260,34 +1260,34 @@ kubectl get pod  -l [k1=v1 kn=vn] --show-labels
 
 ```shell
 #通过yaml创建Pod
-[root@node01 ~]# kubectl create -f pod-nginx.yaml
+[root@node01 ~]> kubectl create -f pod-nginx.yaml
 pod/nginx created
 
 #查看Pod
-[root@node01 ~]# kubectl get pod -n dev
+[root@node01 ~]> kubectl get pod -n dev
 NAME    READY   STATUS    RESTARTS   AGE
 nginx   1/1     Running   0          16s
 
 #为Pod添加标签  version=1.0
-[root@node01 ~]# kubectl label pod nginx version=1.0 -n dev
+[root@node01 ~]> kubectl label pod nginx version=1.0 -n dev
 pod/nginx labeled
 
 #查看Pod上的标签
-[root@node01 ~]# kubectl get pod nginx -n dev --show-labels
+[root@node01 ~]> kubectl get pod nginx -n dev --show-labels
 NAME    READY   STATUS    RESTARTS   AGE   LABELS
 nginx   1/1     Running   0          38s   version=1.0
 
 #更新Pod上的标签值
-[root@node01 ~]# kubectl label pod nginx version=2.8 -n dev --overwrite=true
+[root@node01 ~]> kubectl label pod nginx version=2.8 -n dev --overwrite=true
 pod/nginx labeled
 
 #查看Pod上的标签
-[root@node01 ~]# kubectl get pod nginx -n dev --show-labels
+[root@node01 ~]> kubectl get pod nginx -n dev --show-labels
 NAME    READY   STATUS    RESTARTS   AGE     LABELS
 nginx   1/1     Running   0          4m47s   version=2.8
 
 #通过标签筛选Pod
-[root@node01 ~]# kubectl get pod -n dev -l version=2.8 --show-labels
+[root@node01 ~]> kubectl get pod -n dev -l version=2.8 --show-labels
 NAME    READY   STATUS    RESTARTS   AGE    LABELS
 nginx   1/1     Running   0          6m6s   version=2.8
 
@@ -1594,7 +1594,7 @@ Kubernetes中基本上所有资源的以及属性都是一样的，主要包含5
 本小节主要研究**pod.spec.containers**属性，这也是Pod配置中最为关键的一项配置
 
 ```shell
-[root@node01 ~]# kubectl explain pod.spec.containers
+[root@node01 ~]> kubectl explain pod.spec.containers
 KIND:     Pod
 VERSION:  v1
 RESOURCE: containers <[]Object>
@@ -1634,11 +1634,11 @@ spec:
 
 ```shell
 #创建Pod
-[root@node01]# kubectl create -f pod-base.yaml
+[root@node01]> kubectl create -f pod-base.yaml
 pod/pod-base created
 
 #查看Pod列表
-[root@node01]# kubectl get pod -n dev
+[root@node01]> kubectl get pod -n dev
 NAME       READY   STATUS     RESTARTS   AGE
 pod-base   1/2     NotReady   0          32s		#可以Pod里面两个容器，只有一个运行
 
@@ -1737,10 +1737,10 @@ spec:
 command用于在Pod中的容器初始化完毕之后运行一个命令。操作示例如下：
 
 ```shell
-[root@node01]# kubectl create -f pod-command.yaml
+[root@node01]> kubectl create -f pod-command.yaml
 pod/pod-command created
 
-[root@node01]# kubectl get pod -n dev
+[root@node01]> kubectl get pod -n dev
 NAME          READY   STATUS    RESTARTS   AGE
 pod-command   2/2     Running   0          16s  #当busybox容器一直在运行的时候，整个Pod的状态就算是正常了
 ```
@@ -1772,10 +1772,10 @@ spec:
 env环境变量，用于在Pod中的容器设置环境变量
 
 ```shell
-[root@node01]# kubectl apply -f pod-env.yaml
+[root@node01]> kubectl apply -f pod-env.yaml
 pod/pod-env created
 
-[root@node01]# kubectl get pod -n dev
+[root@node01]> kubectl get pod -n dev
 NAME      READY   STATUS    RESTARTS   AGE
 pod-env   2/2     Running   0          6s
 
@@ -1794,7 +1794,7 @@ admin
 **kubectl explain pod.spec.containers.ports**的子选项：
 
 ```shell
-[root@node01]# kubectl explain pod.spec.containers.ports
+[root@node01]> kubectl explain pod.spec.containers.ports
 KIND:     Pod
 VERSION:  v1
 RESOURCE: ports <[]Object>  #数组，代表可以有多个容器
@@ -1811,16 +1811,16 @@ FIELDS:
 
 ```shell
 # 创建容器
-[root@node01]# kubectl apply -f pod-ports.yaml
+[root@node01]> kubectl apply -f pod-ports.yaml
 pod/pod-ports created
 
 #查看Pod
-[root@node01]# kubectl get pod -n dev -o wide
+[root@node01]> kubectl get pod -n dev -o wide
 NAME        READY   STATUS    RESTARTS   AGE     IP            NODE     NOMINATED NODE   READINESS GATES
 pod-ports   1/1     Running   0          3m35s   10.244.1.13   node02   <none>           <none>
 
 #查看Pod的详情，JSON格式。可以看到容器暴露的端口以及PodIP
-[root@node01 c5]# kubectl get pod -n dev pod-ports -o json
+[root@node01 c5]> kubectl get pod -n dev pod-ports -o json
 {
   "apiVersion": "v1",
   "kind": "Pod",
@@ -1889,7 +1889,7 @@ Commercial support is available at
 容器中运行的程序要运行，肯定要占用一定的资源，比如CPU和内存等。如果不对某个容器的资源做限制，那么它就可能吃掉大量资源，导致其他容器无法运行。针对这种情况，Kubernetes提供了对内存和CPU的资源进行配额的机制，这种机制主要通过resources选项实现。
 
 ```shell
-[root@node01 c5]# kubectl explain pod.spec.containers.resources
+[root@node01 c5]> kubectl explain pod.spec.containers.resources
 KIND:     Pod
 VERSION:  v1
 RESOURCE: resources <Object>
@@ -2022,12 +2022,12 @@ spec:
 
 ```shell
 # 创建Pod
-[root@node01]# kubectl create -f pod-initcontainer.yaml
+[root@node01]> kubectl create -f pod-initcontainer.yaml
 pod/pod-initcontainer created
 
 # 查看Pod状态
 # 发现Pod卡在第一个初始化容器的过程中，后面的容器不会运行“Init:0/2”（当前集群中没有172.16.210.13的主机，所以ping不通，阻塞住了）
-[root@node01]# kubectl get pod -n dev
+[root@node01]> kubectl get pod -n dev
 NAME                READY   STATUS     RESTARTS   AGE
 pod-initcontainer   0/1     Init:0/2   0          9s
 
@@ -2039,6 +2039,101 @@ kubectl get pod pod-container -n dev -w
 kubectl delete pod pod-initcontainer -n dev
 kubectl create -f pod-initcontainer.yaml
 ```
+
+### 钩子函数
+
+钩子函数能够感知自身生命周期中的事件，并在相应的时刻到来时运行用户指定的程序代码。
+
+Kubernetes在主容器的启动之后和停止之前提供了两个钩子函数：
+
+* post start：容器创建之后，如果失败了会重启容器
+* Pre stop：容器终止之前，执行完成之后容器将成功终止，在其完成之前会阻塞删除容器的操作
+
+钩子处理器支持使用下面三种定义动作：
+
+* exec 命令：在容器内执行一次命令
+
+```yaml
+lifecycle:
+	postStart:
+		exec:
+			command:
+				- cat
+				- /tmp/healthy
+```
+
+* TCPSocket：在当前容器尝试访问容器指定的Socket
+
+```yaml
+lifecycle:
+	postStart:
+		tcpSocket:
+			port: 8080
+```
+
+* HTTPGet：在当前容器中向某URL发起http请求
+
+```yaml
+lifecycle:
+	postStart:
+		httpGet:
+			scheme:  HTTP 				 #支持的协议 http或https
+			host： 172.16.210.12		#主机地址
+			port:  80 						 #端口号
+			path:  /  						 #URI地址
+```
+
+**一般来说，exec方式使用较多，HTTPGet次之，TCPSocket最后**。
+
+接下来，exec方式为示例，首先创建pod-hook-exec.yaml文件，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-hook-exec
+  namespace: dev
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.17.1
+      ports:
+        - name: nginx-port
+          containerPort: 80
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              [
+                "/bin/sh",
+                "-c",
+                "echo postStart... > /usr/share/nginx/html/index.html",
+              ]
+        preStop:
+          exec:
+            command: ["/usr/sbin/nginx", "-s", "quit"]
+```
+
+命名操作如下：
+
+```shell
+# 创建Pod
+[root@node01]> kubectl create -f pod-hook-exec.yaml
+pod/pod-hook-exec created
+
+# 查看Pod
+[root@node01]> kubectl get pod pod-hook-exec -n dev -o wide
+NAME            READY   STATUS    RESTARTS   AGE   IP            NODE     NOMINATED NODE   READINESS GATES
+pod-hook-exec   1/1     Running   0          32s   10.244.1.17   node02   <none>           <none>
+
+#访问服务
+[root@node01]> curl http://10.244.1.17:80
+postStart...
+```
+
+
+
+
 
 
 
