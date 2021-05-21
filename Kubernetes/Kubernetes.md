@@ -1504,15 +1504,15 @@ metadata:                       #元数据，表示资源的标识信息
     - key: value                #元数据，标签，以标签的键/值对
   annotations:                  #元数据，表示Pod的注解列表，以注解的键/值对
     - key: value
-spec:														#Pod中容器的详细定义，Required
-  containers:										#Pod中容器列表，可以有多个容器，Required
-    - name: String							#容器名称，Required
-      image: String							#容器的镜像，Required
+spec:                           #Pod中容器的详细定义，Required
+  containers:                   #Pod中容器列表，可以有多个容器，Required
+    - name: String              #容器名称，Required
+      image: String             #容器的镜像，Required
       imagePullPolicy: [Always|Never|IfNotPresent]	#容器的获取策略
-      command: [String]					#容器启动之后执行的命令，不配置时，执行容器内部的命令
-      args: [String]						#容器启动命令的参数列表
-      workingDir: String				#容器的工作目录
-      volumeMounts:							#挂在到容器内部的存储卷
+      command: [String]         #容器启动之后执行的命令，不配置时，执行容器内部的命令
+      args: [String]            #容器启动命令的参数列表
+      workingDir: String        #容器的工作目录
+      volumeMounts:             #挂在到容器内部的存储卷
         - name: String					#引用Pod定义中volume标签下定义的共享存储卷的名称
           mountPath: String			#存储卷在容器内部挂在的绝对路径
           readonly: boolean			#存储卷是否只读
