@@ -2171,6 +2171,103 @@ lifecycle:
 		path:  /
 ```
 
+**方式一：exec**
+
+创建pod-liveness-exec.yaml文件
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-liveness-exec
+  namespace: dev
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.17.1
+      ports:
+        - name: nginx-port
+          containerPort: 80
+      livenessProbe:
+        exec:
+          command: ["/bin/cat", "/tmp/hello.txt"] #执行一个查看文件的命令
+```
+
+创建Pod，观察效果：
+
+```shell
+[root@node01 c5]> kubectl describe pod pod-liveness-exec -n dev
+.........
+Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  2m41s default-scheduler  Successfully assigned dev/pod-liveness-exec to node02
+  Normal   Pulled     78s   kubelet    Container image "nginx:1.17.1" already present on machine
+  Normal   Created    78s   kubelet    Created container main-container
+  Normal   Started    78s   kubelet    Started container main-container
+  Normal   Killing    78s   kubelet    Container main-container failed liveness probe, will be restarted
+  Warning  Unhealthy  68s   kubelet    Liveness probe failed: /bin/cat: /tmp/hello.txt: No such file or directory
+  
+  # 上面输出结果的最后面部分可以看出，Nginx容器启动之后进行了健康检查
+  # 检查失败之后，容器再被kill掉，然后尝试进行重启，这是由于重启策略的作用，后面会进一步了解它
+  # 稍等一会儿，再观察Pod信息，就可以看到RESTARTS不再是0，而是一直增长
+  
+[root@node01 c5]> kubectl get pod -n dev
+NAME                READY   STATUS             RESTARTS   AGE
+pod-liveness-exec   0/1     CrashLoopBackOff   6          6m54s
+
+# 当然接下来，可以修改成一个存在的文件，比如/tmp/hello.txt，再试，结果就正常了......
+```
+
+**方式二：TCPSocket**
+
+首先创建pod-liveness-tcpsocket.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-liveness-tcpsocket
+  namespace: dev
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.17.1
+      ports:
+        - name: nginx-port
+          containerPort: 80
+      livenessProbe:
+        tcpSocket:
+          port: 8080
+```
+
+创建Pod，观察结果
+
+```shell
+# 创建Pod
+[root@node01]> kubectl create -f pod-liveness-tcpsocket.yaml
+pod/pod-hook-exec created
+
+# 观察Pod
+[root@node01]> kubectl describe pod pod-liveness-tcpsocket -n dev
+......
+Events:
+Type     Reason     Age   From               Message
+----     ------     ----  ----               -------
+Normal   Scheduled  13s   default-scheduler  Successfully assigned dev/pod-liveness-tcpsocket to node02
+Normal   Pulled     12s   kubelet   Container image "nginx:1.17.1" already present on machine
+Normal   Created    12s   kubelet   Created container main-container
+Normal   Started    12s   kubelet   Started container main-container
+Warning  Unhealthy  2s    kubelet   Liveness probe failed: dial tcp 10.244.1.20:8080: connect: connection refused
+# 观察上面的信息，发现尝试访问8080端口,但是失败了
+# 稍等一会之后，再观察pod信息，就可以看到RESTARTS不再是0，而是一直增长
+[root@node01]> kubectl get pod -n dev
+NAME                     READY   STATUS             RESTARTS   AGE
+pod-liveness-tcpsocket   0/1     CrashLoopBackOff   4          2m50s
+
+# 当然接下来，可以修改成一个可以访问的端口，比如80，再试，结果就正常了......
+```
+
 
 
 
