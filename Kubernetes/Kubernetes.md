@@ -2055,32 +2055,32 @@ Kubernetes在主容器的启动之后和停止之前提供了两个钩子函数�
 
 ```yaml
 lifecycle:
-	postStart:
-		exec:
-			command:
-				- cat
-				- /tmp/healthy
+  postStart:
+    exec:
+      command:
+        - cat
+        - /tmp/healthy
 ```
 
 * TCPSocket：在当前容器尝试访问容器指定的Socket
 
 ```yaml
 lifecycle:
-	postStart:
-		tcpSocket:
-			port: 8080
+  postStart:
+    tcpSocket:
+      port: 8080
 ```
 
 * HTTPGet：在当前容器中向某URL发起http请求
 
 ```yaml
 lifecycle:
-	postStart:
-		httpGet:
-			scheme:  HTTP 				 #支持的协议 http或https
-			host： 172.16.210.12		#主机地址
-			port:  80 						 #端口号
-			path:  /  						 #URI地址
+  postStart:
+    httpGet:
+      scheme:  HTTP 				 #支持的协议 http或https
+      host： 172.16.210.12		#主机地址
+      port:  80 						 #端口号
+      path:  /  						 #URI地址
 ```
 
 **一般来说，exec方式使用较多，HTTPGet次之，TCPSocket最后**。
