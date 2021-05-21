@@ -1518,9 +1518,9 @@ spec:                           #Pod中容器的详细定义，Required
           readonly: boolean     #存储卷是否只读
       ports:                    #容器需要暴露的端口列表
       	- name: String          #端口名称
-        	containerPort: int    #容器要暴露的端口
-        	hostPort: int         #与容器端口对应映射的宿主机的端口
-        	protocol: String      #端口协议，支持TCP/UDP，默认TCP
+          containerPort: int    #容器要暴露的端口
+          hostPort: int         #与容器端口对应映射的宿主机的端口
+          protocol: String      #端口协议，支持TCP/UDP，默认TCP
       env:                      #容器运行之前需要设置的环境变量列表
         - name: String          #环境变量名
           value: String         #环境变量值
