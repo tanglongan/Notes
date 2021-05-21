@@ -1481,7 +1481,7 @@ kubectl delete -f svc-nginx.yaml
 
 ### Pod结构
 
-<img src=".images/image-20210519214849020.png" alt="image-20210519214849020" style="zoom: 80%;" />
+<img src=".images/image-20210519214849020.png" alt="image-20210519214849020" align="center" style="zoom: 80%;" />
 
 每个Pod都可以包含一个或多个容器，这些容器可以分为两类：
 
