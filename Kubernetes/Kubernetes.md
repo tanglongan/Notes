@@ -2314,9 +2314,9 @@ Events:
   Normal   Started    14s   kubelet            Started container main-container
   Normal   Killing    14s   kubelet            Container main-container failed liveness probe, will be restarted
   Warning  Unhealthy  4s    kubelet            Liveness probe failed: HTTP probe failed with statuscode: 404
+
 # 观察上面信息，尝试访问路径，但是未找到,出现404错误
 # 稍等一会之后，再观察pod信息，就可以看到RESTARTS不再是0，而是一直增长
-
 [root@node01]> kubectl get pod -n dev
 NAME                   READY   STATUS    RESTARTS   AGE
 pod-liveness-httpget   1/1     Running   5          3m28s
