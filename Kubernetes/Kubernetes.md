@@ -1591,7 +1591,88 @@ Kubernetes中基本上所有资源的以及属性都是一样的，主要包含5
 
 ## Pod配置
 
+本小节主要研究**pod.spec.containers**属性，这也是Pod配置中最为关键的一项配置
 
+```shell
+kubectl explain pod.sepc.containers
+```
+
+![image-20210521080627767](.images/image-20210521080627767.png)
+
+### 基本配置
+
+创建pod-base.yaml，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-base
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+    - name: busybox
+      image: busybox:1.30
+```
+
+上面定义了一个比较简单的Pod配置，里面有两个容器：
+
+* nginx：用1.17.1版本的nginx镜像创建
+* busybox：用1.30版本的busybox镜像创建
+
+```shell
+#创建Pod
+kubectl apply -f pod-base.yaml
+
+#查看Pod列表
+bubectl get pod -n dev
+
+#查看Pod详情
+kubectl describe pod pod-base -n dev
+```
+
+### 镜像拉取
+
+创建pod-imagepullpolicy.yaml文件，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-imagepullpolicy
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+      imagePullPolicy: Always #镜像拉取策略
+    - name: busybox
+      image: busybox:1.30
+```
+
+imagePullPolicy，用于设置镜像拉取策略，Kubernetes支持配置三种拉取策略：
+
+* Always：总是从远程仓库拉取镜像，即一直从远程获取
+* IfNotPresent：本地有则使用本地镜像，本地没有再从远程仓库拉取
+* Never：只使用本地仓库，从不去远程仓库拉取，本地没有就报错，即已知使用本地
+
+> 默认值说明：
+>
+> 如果镜像tag为具体版本号，默认策略是：IfNotPresent
+>
+> 如果镜像tag是latest，即最新版本，默认策略是Always
+
+```shell
+#创建Pod
+kubectl create -f pod-imagepullpolicy.yaml 
+
+#查看Pod详情
+kubectl get pod pod-imagepullpolicy -n dev
+
+
+```
 
 
 
