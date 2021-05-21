@@ -1594,10 +1594,20 @@ Kubernetes中基本上所有资源的以及属性都是一样的，主要包含5
 本小节主要研究**pod.spec.containers**属性，这也是Pod配置中最为关键的一项配置
 
 ```shell
-kubectl explain pod.sepc.containers
+[root@node01 ~]# kubectl explain pod.spec.containers
+KIND:     Pod
+VERSION:  v1
+RESOURCE: containers <[]Object>
+FIELDS:
+      name 	<string> 						#	容器名称
+      image	<string> 						#	容器需要的镜像
+      imagePullPolicy <string> 	#	镜像拉取策略
+      command <[]string> 				# 容器的启动命令列表，如不指定，使用打包时使用的启动命令
+      args		<[]string> 				# 容器的启动命令需要的参数列表
+      env			<[]Object> 				# 容器的环境变量的配置
+      ports											# 容器需要暴露的端口号列表
+      resources <Object>  			# 资源显示和资源请求的设置
 ```
-
-![image-20210521080627767](.images/image-20210521080627767.png)
 
 ### 基本配置
 
@@ -1624,13 +1634,45 @@ spec:
 
 ```shell
 #创建Pod
-kubectl apply -f pod-base.yaml
+[root@node01]# kubectl create -f pod-base.yaml
+pod/pod-base created
 
 #查看Pod列表
-bubectl get pod -n dev
+[root@node01]# kubectl get pod -n dev
+NAME       READY   STATUS     RESTARTS   AGE
+pod-base   1/2     NotReady   0          32s		#可以Pod里面两个容器，只有一个运行
 
 #查看Pod详情
 kubectl describe pod pod-base -n dev
+.....
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  92s                default-scheduler  Successfully assigned dev/pod-base to node02
+  Normal   Pulling    91s                kubelet            Pulling image "nginx:1.17.1"
+  Normal   Pulled     68s                kubelet            Successfully pulled image "nginx:1.17.1" in 22.5s
+  Normal   Created    68s                kubelet            Created container nginx
+  Normal   Started    68s                kubelet            Started container nginx
+  Normal   Pulling    68s                kubelet            Pulling image "busybox:1.30"
+  Normal   Pulled     61s                kubelet            Successfully pulled image "busybox:1.30" in 7.0s
+  Normal   Created    18s (x4 over 61s)  kubelet            Created container busybox
+  Normal   Started    18s (x4 over 61s)  kubelet            Started container busybox
+  Normal   Pulled     18s (x3 over 61s)  kubelet            Container image "busybox:1.30" already present
+  Warning  BackOff    3s (x6 over 60s)   kubelet            Back-off restarting failed container
+
+#从Pod详情信息的Events部分，可以看到如下信息：
+# 1、Pod是被调度部署在node02节点上
+# 2、nginx容器已经创建成功并启动
+# 3、busybox容器创建成功，但是启动失败了
+
+#查看Pod状态
+[root@node01]# kubectl get pod -n dev
+NAME       READY   STATUS             RESTARTS   AGE
+pod-base   1/2     CrashLoopBackOff   6          8m12s
+
+#删除pod
+[root@node01]# kubectl delete pod pod-base -n dev
+pod "pod-base" deleted
 ```
 
 ### 镜像拉取
@@ -1674,11 +1716,173 @@ kubectl get pod pod-imagepullpolicy -n dev
 
 ### 启动命令
 
+在前面的案例中，一直有一个问题没有解决，就是busybox容器一直没有成功运行，那么到底是什么原因导致的这个容器的故障呢？原来busybox并不是一个程序，而是类似于一个工具类的集合，Kubernetes集群启动管理后，它会自动关闭。解决办法就是让其一直运行，这就用到了command的配置。
 
+创建pod-command.yaml文件，内容如下:
 
-![image-20210521082111233](.images/image-20210521082111233.png)
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-command
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+    - name: busybox:1.30
+      command: ['bin/sh', '-c','touch /tmp/hello.txt;while true;do /bin/echo hello >> /tmp/hello.txt;sleep 3; done;' ]
+```
 
+command用于在Pod中的容器初始化完毕之后运行一个命令。操作示例如下：
 
+```shell
+[root@node01]# kubectl create -f pod-command.yaml
+pod/pod-command created
+
+[root@node01]# kubectl get pod -n dev
+NAME          READY   STATUS    RESTARTS   AGE
+pod-command   2/2     Running   0          16s  #当busybox容器一直在运行的时候，整个Pod的状态就算是正常了
+```
+
+### 环境变量
+
+创建一个pod-env.yaml，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-env
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+    - name: busybox
+      image: busybox:1.30
+      command: [ 'bin/sh', '-c','touch /tmp/hello.txt;while true;do /bin/echo hello >> /tmp/hello.txt;sleep 3; done;' ]
+      env:
+        - name: "username"
+          value: "admin"
+        - name: "password"
+          value: "123456"
+```
+
+env环境变量，用于在Pod中的容器设置环境变量
+
+```shell
+[root@node01]# kubectl apply -f pod-env.yaml
+pod/pod-env created
+
+[root@node01]# kubectl get pod -n dev
+NAME      READY   STATUS    RESTARTS   AGE
+pod-env   2/2     Running   0          6s
+
+#进入Pod的busybox容器，测试设置的环境变量
+[root@node01 c5]# kubectl exec pod-env -n dev -c busybox -it /bin/sh
+/ # echo $username
+admin
+```
+
+这种设置环境变量的方式不是很推荐，推荐将这些环境变量存储在配置文件中，后续会进一步了解。
+
+### 端口设置
+
+本小节讲解ports，也就是containers的ports选项，即容器的端口暴露。
+
+**kubectl explain pod.spec.containers.ports**的子选项：
+
+```shell
+[root@node01]# kubectl explain pod.spec.containers.ports
+KIND:     Pod
+VERSION:  v1
+RESOURCE: ports <[]Object>  #数组，代表可以有多个容器
+
+FIELDS:
+	 name	<string>						# 端口名称，如果指定，必须保证name在pod中是唯一的
+   containerPort	<integer> # required 容器要暴露和监听的端口，该端口是暴露在Pod的IP地址上
+   hostIP	<string>					# 要将外部端口绑定到的主机IP，一般不设置
+   hostPort	<integer> 			# 容器端口要在主机上公开的端口，一般不设置。如果设置，主机上只能运行容器的一个副本
+   protocol	<string> 		# 端口的协议，必须是UDP、TCP、SCTP之一，默认是TCP
+```
+
+首先创建一个pod-ports.yaml，内容如下：
+
+```shell
+# 创建容器
+[root@node01]# kubectl apply -f pod-ports.yaml
+pod/pod-ports created
+
+#查看Pod
+[root@node01]# kubectl get pod -n dev -o wide
+NAME        READY   STATUS    RESTARTS   AGE     IP            NODE     NOMINATED NODE   READINESS GATES
+pod-ports   1/1     Running   0          3m35s   10.244.1.13   node02   <none>           <none>
+
+#查看Pod的详情，JSON格式。可以看到容器暴露的端口以及PodIP
+[root@node01 c5]# kubectl get pod -n dev pod-ports -o json
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "status": {
+    "containerStatuses": [
+      {
+        "containerID": "docker://fb22faca6004ca43e4aa6b71b66963976b3214427c96614b244443677114c0e9",
+        "image": "nginx:1.17.1",
+        "imageID": "docker-pullable://nginx@sha256:b4b9b3eee194703fc2fa8afa",
+        "lastState": {},
+        "name": "nginx",
+        "ready": true,
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2021-05-21T06:21:01Z"
+          }
+        }
+      }
+    ],
+    "hostIP": "172.16.210.11",
+    "phase": "Running",
+    "podIP": "10.244.1.13",
+    "podIPs": [
+      {
+        "ip": "10.244.1.13"
+      }
+    ],
+    "qosClass": "BestEffort",
+    "startTime": "2021-05-21T06:21:00Z"
+  }
+}
+
+# 访问Nginx的服务  NodeIP:containerPort
+[root@node01 c5]# curl http://10.244.1.13:80
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
 
 
 
