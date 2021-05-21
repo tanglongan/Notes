@@ -1884,6 +1884,94 @@ Commercial support is available at
 </html>
 ```
 
+### 资源配额
+
+容器中运行的程序要运行，肯定要占用一定的资源，比如CPU和内存等。如果不对某个容器的资源做限制，那么它就可能吃掉大量资源，导致其他容器无法运行。针对这种情况，Kubernetes提供了对内存和CPU的资源进行配额的机制，这种机制主要通过resources选项实现。
+
+```shell
+[root@node01 c5]# kubectl explain pod.spec.containers.resources
+KIND:     Pod
+VERSION:  v1
+RESOURCE: resources <Object>
+
+FIELDS:
+   limits	<map[string]string>   # 用于限制运行时容器的最大占用资源，当容器占用资源超过limits时会被终止，并进行重启
+   requests	<map[string]string> # 用于设置容器需要的最小资源，如果环境资源不够，容器将无法启动
+```
+
+可以通过**limits**和**requests**两个选项设置资源的上下限。接下来，编写一个测试案例，创建pod-resources.yaml，内容如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-reqources
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+      resources:					#资源配额
+        limits:						#资源限制（上限）
+          cpu: "2"				#CPU最多2核
+          memory: "2G"		#内存最多2G
+        requests:					#请求资源（下限）
+          cpu: "1"				#CPU最少1核
+          memory: "1G"		#内存最少1G
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
