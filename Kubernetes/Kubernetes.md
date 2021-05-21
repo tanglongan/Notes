@@ -2164,11 +2164,11 @@ lifecycle:
 
 ```shell
 lifecycle:
-	httpGet:
-		scheme:  HTTP
-		host： 172.16.210.12
-		port:  80
-		path:  /
+  httpGet:
+    scheme:  HTTP
+    host： 172.16.210.12
+    port:  80
+    path:  /
 ```
 
 **方式一：exec**
@@ -2208,10 +2208,9 @@ Events:
   Normal   Killing    78s   kubelet    Container main-container failed liveness probe, will be restarted
   Warning  Unhealthy  68s   kubelet    Liveness probe failed: /bin/cat: /tmp/hello.txt: No such file or directory
   
-  # 上面输出结果的最后面部分可以看出，Nginx容器启动之后进行了健康检查
-  # 检查失败之后，容器再被kill掉，然后尝试进行重启，这是由于重启策略的作用，后面会进一步了解它
-  # 稍等一会儿，再观察Pod信息，就可以看到RESTARTS不再是0，而是一直增长
-  
+# 上面输出结果的最后面部分可以看出，Nginx容器启动之后进行了健康检查
+# 检查失败之后，容器再被kill掉，然后尝试进行重启，这是由于重启策略的作用，后面会进一步了解它
+# 稍等一会儿，再观察Pod信息，就可以看到RESTARTS不再是0，而是一直增长
 [root@node01 c5]> kubectl get pod -n dev
 NAME                READY   STATUS             RESTARTS   AGE
 pod-liveness-exec   0/1     CrashLoopBackOff   6          6m54s
