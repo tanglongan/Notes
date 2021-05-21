@@ -1495,61 +1495,61 @@ kubectl delete -f svc-nginx.yaml
 下面是Pod的资源清单
 
 ```yaml
-apiVersion: v1                  #版本，v1代表稳定版本，Required
-kind: pod                       #类型，Pod，Required
-metadata:                       #元数据，表示资源的标识信息
-  name: String                  #元数据，表示Pod的名称
-  namespace: String             #元数据，表示Pod的名称空间，默认为default
-  labels:                       #元数据，表示Pod的标签列表，以标签的键/值对
-    - key: value                #元数据，标签，以标签的键/值对
-  annotations:                  #元数据，表示Pod的注解列表，以注解的键/值对
+apiVersion: v1                               #版本，v1代表稳定版本，Required
+kind: pod                                    #类型，Pod，Required
+metadata:                                    #元数据，表示资源的标识信息
+  name: String                               #元数据，表示Pod的名称
+  namespace: String                          #元数据，表示Pod的名称空间，默认为default
+  labels:                                    #元数据，表示Pod的标签列表，以标签的键/值对
+    - key: value                             #元数据，标签，以标签的键/值对
+  annotations:                               #元数据，表示Pod的注解列表，以注解的键/值对
     - key: value
-spec:                           #Pod中容器的详细定义，Required
-  containers:                   #Pod中容器列表，可以有多个容器，Required
-    - name: String              #容器名称，Required
-      image: String             #容器的镜像，Required
-      imagePullPolicy: [Always|Never|IfNotPresent]	#容器的获取策略
-      command: [String]         #容器启动之后执行的命令，不配置时，执行容器内部的命令
-      args: [String]            #容器启动命令的参数列表
-      workingDir: String        #容器的工作目录
-      volumeMounts:             #挂载到容器内部的存储卷
-        - name: String          #引用Pod定义中volume标签下定义的共享存储卷的名称
-          mountPath: String     #存储卷在容器内部挂在的绝对路径
-          readonly: boolean     #存储卷是否只读
-      ports:                    #容器需要暴露的端口列表
-      	- name: String          #端口名称
-          containerPort: int    #容器要暴露的端口
-          hostPort: int         #与容器端口对应映射的宿主机的端口
-          protocol: String      #端口协议，支持TCP/UDP，默认TCP
-      env:                      #容器运行之前需要设置的环境变量列表
-        - name: String          #环境变量名
-          value: String         #环境变量值
-      resources:                #资源限制和请求的设置
-        limits:	                #资源限制
-          cpu: String           #CPU数量限制，容器启动时，用于docker run --cpu-quota参数
-          memory: String        #内存限制，单位可以是MiB/GiB/MB/GB
-        requests:               #资源请求
-          cpu: String           #CPU请求数量，容器启动时，用于docker run --cpu-shares参数
-          memory: String        #内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
-      livenessProbe:            #Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
-        exec:                   #1、exec命令方式检测容器运行健康状态
-          command: [String]     #exec命令方式要执行的脚本或命令
-        httpGet:                #2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
-          path: String
+spec:                                        #Pod中容器的详细定义，Required
+  containers:                                #Pod中容器列表，可以有多个容器，Required
+    - name: String                           #容器名称，Required
+      image: String                          #容器的镜像，Required
+      imagePullPolicy: String                #容器的获取策略，可选值：Always|Never|IfNotPresent
+      command: [String]                      #容器启动之后执行的命令，不配置时，执行容器内部的命令
+      args: [String]                         #容器启动命令的参数列表
+      workingDir: String                     #容器的工作目录
+      volumeMounts:                          #挂载到容器内部的存储卷
+        - name: String                       #引用Pod定义中volume标签下定义的共享存储卷的名称
+          mountPath: String                  #存储卷在容器内部挂在的绝对路径
+          readonly: boolean                  #存储卷是否只读
+      ports:                                 #容器需要暴露的端口列表
+      	- name: String                       #端口名称
+          containerPort: int                 #容器要暴露的端口
+          hostPort: int                      #与容器端口对应映射的宿主机的端口
+          protocol: String                   #端口协议，支持TCP/UDP，默认TCP
+      env:                                   #容器运行之前需要设置的环境变量列表
+        - name: String                       #环境变量名
+          value: String                      #环境变量值
+      resources:                             #资源限制和请求的设置
+        limits:	                             #资源限制
+          cpu: String                        #CPU数量限制，容器启动时，用于docker run --cpu-quota参数
+          memory: String                     #内存限制，单位可以是MiB/GiB/MB/GB
+        requests:                            #资源请求
+          cpu: String                        #CPU请求数量，容器启动时，用于docker run --cpu-shares参数
+          memory: String                     #内存请求，容器启动时的初始可用数量，单位可以是MiB/GiB/MB/GB
+      livenessProbe:                         #Pod中容器健康检查，当探测几次无失败之后就会重启该容器。
+        exec:                                #1、exec命令方式检测容器运行健康状态
+          command: [String]                  #exec命令方式要执行的脚本或命令
+        httpGet:                             #2、HTTP GET请求方式检测各容器健康状态，需要指定path、post
+          path: String                       #请求路径
+          port: int                          #端口
+          host: String                       #主机
+          scheme: String                     #协议
+          httpHeaders:                       #请求头设置
+            - name: String                   #请求头名
+              value: String                  #请求头值
+        tcpSocket:                            #3、通过tcpSocket方式探测各容器的健康状态
           port: int
-          host: String
-          scheme: String
-          httpHeaders:
-            - name: String
-              value: String
-        tcpSocket:              #3、通过tcpSocket方式探测各容器的健康状态
-          port: int
-        initialDelaySeconds: int  #容器启动之后延迟多少秒再进行探测
-        timeoutSeconds: int       #对容器健康探测的超时时间
-        periodSeconds: int        #两次对容器健康检测的间隔时间
+        initialDelaySeconds: int              #容器启动之后延迟多少秒再进行探测
+        timeoutSeconds: int                   #对容器健康探测的超时时间
+        periodSeconds: int                    #两次对容器健康检测的间隔时间
         successThreshold: int
         failureThreshold: int
-        securityContext:					#安全配置
+        securityContext:                      #安全配置
           privileged: false
       restartPolicy: [always|Never|onFailure] #Pod重启策略
       nodeSelector: object                    #节点选择，设置nodeSelector表示将Pod调度到包含这个标签的节点上
