@@ -39,7 +39,7 @@ Kubernetes本质上是`` 一组服务器集群``，它可以在集群的每个�
 >
 > **containerRuntime**：负责节点上容器的各种操作
 
-<img src=".images/image-20210517110543319-1621294493072.png" alt="image-20210517110543319-1621294493072" style="zoom:50%;" />
+<img src=".images/image-20210517110543319-1621294493072.png" alt="image-20210517110543319-1621294493072" style="zoom:50%;align:center" />
 
 下面部署一个Nginx服务来说明Kubernetes系统各个组件之间的调用关系：
 
@@ -77,7 +77,7 @@ Kubernetes集群大体上分为两类：一主多从和多主多从
 * **一主多从**：一台Master和多台Node节点，搭建简单，但有单机故障风险，使用与测试环境
 * **多主多从**：多台Master和多台Node节点，搭建麻烦，可靠性高，使用于生产环境
 
-<img src=".images/image-20210517183611168.png" alt="image-20210517183611168" style="zoom:50%;" />
+<img src=".images/image-20210517183611168.png" alt="image-20210517183611168" style="zoom:50%;align:center" />
 
 ### 安装方式
 
@@ -421,7 +421,7 @@ kube-scheduler-node01            1/1     Running   0          52m
 >
 > 学习Kubernetes的核心，就是学习如何对集群上的**Pod**、**Pod控制器**、**Service**、**存储**等各种资源进行操作
 
-<img src=".images/image-20210518194812066.png" alt="image-20210518194812066" style="zoom:50%;" />
+<img src=".images/image-20210518194812066.png" alt="image-20210518194812066" style="zoom:50%;align:center" />
 
 ## YAML语言介绍
 
@@ -823,7 +823,7 @@ Namespace是Kubernetes中非常重要的资源，它的主要作用就是**用�
 * 默认情况下，Kubernetes集群中所有的Pod都是可以互相访问的。但是实际中可能不想让两个Pod之间进行互相访问，那么此时就可以将两个Pod划分到不同的Namespace下。Kubernetes通过将不同Pod划分到不同的Namespace，形成逻辑上的“组”，以便于将不同组的资源进行隔离和使用。
 * 可以通过Kubernetes的授权机制，将不同的Namespace授权给不同的租户进行管理，这样就形成了不同租户之间资源的隔离。此时还能结合Kubernetes的资源配额机制，限定不同租户能占用的资源，例如使用CPU使用量，内存使用量等来实现租户的资源管理。
 
-<img src=".images/image-20210519134313318.png" alt="image-20210519134313318" style="zoom:50%;" />
+<img src=".images/image-20210519134313318.png" alt="image-20210519134313318" style="zoom:50%;align:center" />
 
 Kubernetes集群在启动之后会创建几个默认的namespace
 
@@ -1018,7 +1018,7 @@ namespace "dev" deleted
 
 Pod是Kubernetes最小的调度单元，Pod可以认为是对容器包装，一个Pod里面包含一个或多个容器。
 
-![image-20210519214849020](.images/image-20210519214849020.png)
+<img src=".images/image-20210522123821516.png" alt="image-20210522123821516" style="zoom:50%;align: center" />
 
 Kubernetes集群启动之后，集群的各个组件也是以Pod形式运行的，可以通过下面命令查看：
 
@@ -1329,7 +1329,7 @@ Pod控制器用于Pod管理，确保Pod资源符合预期的状态，当Pod的�
 
 在Kubernetes中Pod控制器的种类有很多，这里暂时只介绍Deployment。
 
-<img src=".images/image-20210519232417672.png" alt="image-20210519232417672" style="zoom:67%;" />
+<img src=".images/image-20210519232417672.png" alt="image-20210519232417672" style="zoom:67%;align: center" />
 
 **命令操作**
 
@@ -1410,7 +1410,7 @@ kubectl delete -f deploy-nginx.yaml
 
 Kubenetes通过Service来解决这些问题。Service可以看作是一组同类Pod的**对外的访问入口**。借助Service，应用可以方便地实现**服务发现**和**负载均衡**。
 
-<img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;" />
+<img src=".images/image-20210520081840877.png" alt="image-20210520081840877" style="zoom:67%;align: center" />
 
 **命令方式**
 
@@ -1481,7 +1481,7 @@ kubectl delete -f svc-nginx.yaml
 
 ### Pod结构
 
-<img src=".images/image-20210519214849020.png" alt="image-20210519214849020" align="center" style="zoom: 80%;" />
+<img src=".images/image-20210519214849020.png" alt="image-20210519214849020" style="zoom: 80%;align:center" />
 
 每个Pod都可以包含一个或多个容器，这些容器可以分为两类：
 
