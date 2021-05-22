@@ -1984,7 +1984,7 @@ spec:
 
 为了简化测试，事先规定好MySQL和Redis服务器的地址分别为：172.16.210.10、172.16.210.11
 
-创建pod-initcontainer.yaml，内容如下：
+1. 创建pod-initcontainer.yaml，内容如下：
 
 ```yaml
 apiVersion: v1
@@ -2018,7 +2018,7 @@ spec:
         ]
 ```
 
-然后创建Pod，执行命令和输出结果如下：
+2. 然后创建Pod，执行命令和输出结果如下：
 
 ```shell
 # 创建Pod
@@ -2173,7 +2173,7 @@ lifecycle:
 
 **方式一：exec**
 
-创建pod-liveness-exec.yaml文件
+1. 创建pod-liveness-exec.yaml文件
 
 ```yaml
 apiVersion: v1
@@ -2193,7 +2193,7 @@ spec:
           command: ["/bin/cat", "/tmp/hello.txt"] #执行一个查看文件的命令
 ```
 
-创建Pod，观察效果：
+2. 创建Pod，观察效果：
 
 ```shell
 [root@node01 c5]> kubectl describe pod pod-liveness-exec -n dev
@@ -2220,7 +2220,7 @@ pod-liveness-exec   0/1     CrashLoopBackOff   6          6m54s
 
 **方式二：TCPSocket**
 
-首先创建pod-liveness-tcpsocket.yaml
+1. 首先创建pod-liveness-tcpsocket.yaml
 
 ```yaml
 apiVersion: v1
@@ -2240,7 +2240,7 @@ spec:
           port: 8080
 ```
 
-创建Pod，观察结果
+2. 创建Pod，观察结果
 
 ```shell
 # 创建Pod
@@ -2269,7 +2269,7 @@ pod-liveness-tcpsocket   0/1     CrashLoopBackOff   4          2m50s
 
 **方式三：HTTPGet**
 
-创建pod-livebess-httpget.yaml
+1. 创建pod-livebess-httpget.yaml
 
 ```yaml
 apiVersion: v1
@@ -2291,7 +2291,7 @@ spec:
           path: /hello
 ```
 
-创建Pod，观察结果：
+2. 创建Pod，观察结果：
 
 ```shell
 [root@node01]> kubectl create -f pod-liveness-httpget.yaml
