@@ -2339,6 +2339,304 @@ FIELDS:
 
 ## Pod调度
 
+### 基本介绍
+
+在默认情况下，一个Pod在哪个Node节点上运行，是由Scheduler组件采用相应的算法计算出来的，这个过程是不受人工控制的。但是在实际使用中，这可能不满足需求，因为很多情况下，我们想控制某些Pod到达某些节点上，那么应该怎么做呢？这就要求了解Kubernetes对Pod的调度规则，Kubernetes提供了四大类调度方式：
+
+* **自动调度**：运行在哪个节点上完全由Scheduler经过一系列的算法计算出来
+* **定向调度**：NodeName、NodeSelector
+* **亲和度调度**：NodeAffinity、PodAffinity、PodAntiAffinity
+* **污点（容忍）调度**：Taints、Toleration
+
+### 定向调度
+
+定向调度，指的是利用在Pod上声明nodeName或者nodeSelector，以此将Pod调度到期望的Pod节点上。注意，这里的调度是强制的，这就意味着即使要调度的目标Node不存在，也会向上面进行调度。只不过pod运行失败而已。
+
+**NodeName**
+
+NodeName用于强制约束将Pod调度到指定Name的Node节点上。这种方式，其实就是直接跳过Scheduler的调度计算逻辑，直接将Pod调度到指定的节点。
+
+1. 首先创建一个pod-nodename.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodename
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+  nodename: node03        #指定调度到node03节点上
+```
+
+2. 然后创建Pod，观察变化
+
+```shell
+[root@node01]> kubectl create -f pod-nodename.yaml
+pod/pod-nodename created
+
+#查看Pod的NODE属性，表明Pod被调度到了node03上去了
+[root@node01]> kubectl get pod -n dev -o wide
+NAME           READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE   READINESS GATES
+pod-nodename   1/1     Running   0          2m29s   10.244.2.2   node03   <none>           <none>
+
+#删除掉Pod
+[root@node01]> kubectl delete pod pod-nodename -n dev
+pod "pod-nodename" deleted
+
+#修改yaml文件，将nodeName值修改为node04，这个不存在！
+vim pod-nodename.yaml
+
+#创建Pod
+[root@node01]> kubectl create -f pod-nodename.yaml
+pod/pod-nodename created
+
+#查看Pod调度，由于不存在node04节点，所以pod无法正常创建成功
+[root@node01]> kubectl get pod -n dev -o wide
+NAME           READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED NODE   READINESS GATES
+pod-nodename   0/1     Pending   0          17s   <none>   node04   <none>           <none>
+```
+
+**NodeSelector**
+
+NodeSelector用于将Pod调度到添加了标签的node节点上。它是通过Kubernetes的label-selector机制实现的。也就是说，在Pod创建之前，会由Scheduler使用MatchNodeSelector调度策略进行label匹配，找出目标node，然后将node调度到目标节点上，该匹配规则是强制约束。
+
+1. 首先分别为node节点添加标签
+
+```shell
+#为node02节点添加标签 nodeenv=dev
+[root@node01 c5]# kubectl label nodes node02 nodeenv=dev
+node/node02 labeled
+
+#为node02节点添加标签 nodeenv=test
+[root@node01 c5]# kubectl label nodes node03 nodeenv=test
+node/node03 labeled
+```
+
+2. 创建一个pod-nodeselector.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodename
+  namespace: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+  nodeSelector:
+    nodeenv: dev          #指定调度到具有nodeenv=dev标签的节点上
+```
+
+3. 创建Pod，观察变化
+
+```shell
+[root@node01 c5]# kubectl create -f pod-nodeselector.yaml
+pod/pod-nodename created
+
+#查看Pod信息，可以看到Pod被调度到了node02上
+[root@node01 c5]# kubectl get pod -n dev -o wide
+NAME           READY   STATUS    RESTARTS   AGE   IP            NODE     NOMINATED NODE   READINESS GATES
+pod-nodename   1/1     Running   0          15s   10.244.1.22   node02   <none>           <none>
+```
+
+定向调度使用起来非常方便，但是也有一定的问题，那就是如果没有满足条件的Node，那么Pod将不会被运行，即使在集群中还有可用Node列表也不行，这就限制了它的使用场景。
+
+### 亲和性调度
+
+Kubernetes还提供了一种亲和性调度（Affinity）。它在NodeSelector的基础上进行了扩展，可以通过配置的形式，实现优先选择满足条件的Node进行调度，如果没有，也可以调度到不满足条件的节点上，使得调度更加灵活。Affinity主要分为3类：
+
+* **nodeAffinity**：node亲和性，以node为目标，**解决pod可以调度到哪些node的问题**
+* **podAffinity**：pod亲和性，以pod为目标，**解决pod可以和哪些已存在的pod部署在同一个拓扑域中的问题**
+* **podAntiAffinity**：pod反亲和性，以pod为目标，**解决pod不能和哪些已存在pod部署在同一个拓扑域中的问题**
+
+**使用场景**
+
+* **亲和性**：如果两个应用频繁交互，那就有必要利用亲和性让两个应用的尽可能的靠近，这样可以减少因网络通信而带来的性能损耗
+* **反亲和性**：当应用采用多副本部署时，有必要采用反亲和性让各个应用打散分布在各个node上，这样可以提高服务的高可用性
+
+**PodAffinity**
+
+PodAffinity主要实现以运行的Pod为参照，实现让新创建的Pod跟参数Pod在同一个区域的功能。
+
+看一下PodAffinity的子配置项：
+
+```text
+pod.spec.affinity.podAffinity
+  requiredDuringSchedulingIgnoredDuringExecution  #硬限制
+  namespaces                                      #指定参照pod的namespace
+  topologyKey                                     #指定调度作用域
+  labelSelector                                   #标签选择器
+    matchExpressions                              #按节点标签列出的节点选择器要求列表(推荐)
+      key                                         #键
+      values                                      #值
+      operator                                    #关系符 支持In, NotIn, Exists, DoesNotExist.
+    matchLabels                                   #指多个matchExpressions映射的内容
+  preferredDuringSchedulingIgnoredDuringExecution #软限制
+    podAffinityTerm                               #选项
+      namespaces      
+      topologyKey
+      labelSelector
+        matchExpressions  
+          key
+          values
+          operator
+        matchLabels 
+    weight                  #倾向权重，在范围1-100
+```
+
+* topologyKey用于指定调度时作用域,例如
+    * 指定为kubernetes.io/hostname，那就是以Node节点为区分范围
+    * 指定为beta.kubernetes.io/os，那就是以Node节点的操作系统类型来区分
+
+**requiredDuringSchedulingIgnoredDuringExecution**
+
+1. 创建一个参考Pod的yaml，pod-podaffinity-target.yaml
+
+```yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodename
+  namespace: dev
+  labels:
+  	podenv: dev
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.17.1
+  nodename: node02        #将目标pod明确指定到node02上
+```
+
+2. 创建Pod，观察状态
+
+```shell
+# 启动目标pod
+[root@master ~]# kubectl create -f pod-podaffinity-target.yaml
+pod/pod-podaffinity-target created
+
+# 查看pod状况
+[root@master ~]# kubectl get pod -n dev
+NAME                     READY   STATUS    RESTARTS   AGE
+pod-podaffinity-target   1/1     Running   0          4s
+```
+
+3. 创建pod-podaffinity-required.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-podaffinity-required
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:                                           #亲和性设置
+    podAffinity:                                      #设置pod亲和性
+      requiredDuringSchedulingIgnoredDuringExecution: #硬限制
+      - labelSelector:
+          matchExpressions:                           #匹配env的值在["xxx","yyy"]中的标签
+          - key: podenv
+            operator: In
+            values: ["xxx","yyy"]
+        topologyKey: kubernetes.io/hostname
+```
+
+上面配置表达的意思是：新的Pod必须要与拥有标签podenv=xxx或podenv=yyy的Pod在同一个Node上，显然现在没有这样的Pod。
+
+```shell
+# 启动pod
+[root@node01]> kubectl create -f pod-podaffinity-required.yaml
+pod/pod-podaffinity-required created
+
+# 查看pod状态，发现未运行
+[root@node01]> kubectl get pods pod-podaffinity-required -n dev
+NAME                       READY   STATUS    RESTARTS   AGE
+pod-podaffinity-required   0/1     Pending   0          9s
+
+# 查看详细信息
+[root@node01]> kubectl describe pods pod-podaffinity-required  -n dev
+......
+Events:
+  Type     Reason            Age        From               Message
+  ----     ------            ----       ----               -------
+  Warning  FailedScheduling  <unknown>  default-scheduler  0/3 nodes are available: 2 node(s) didn't match pod affinity rules, 1 node(s) had taints that the pod didn't tolerate.
+
+# 接下来修改  values: ["xxx","yyy"]----->values:["pro","yyy"]
+# 意思是：新Pod必须要与拥有标签nodeenv=xxx或者nodeenv=yyy的pod在同一Node上
+[root@node01]> vim pod-podaffinity-required.yaml
+
+# 然后重新创建pod，查看效果
+[root@node01]> kubectl delete -f  pod-podaffinity-required.yaml
+pod "pod-podaffinity-required" deleted
+[root@node01]> kubectl create -f pod-podaffinity-required.yaml
+pod/pod-podaffinity-required created
+
+# 发现此时Pod运行正常
+[root@node01]> kubectl get pods pod-podaffinity-required -n dev
+NAME                       READY   STATUS    RESTARTS   AGE   LABELS
+pod-podaffinity-required   1/1     Running   0          6s    <none>
+```
+
+**PodAntiAffinity**
+
+PodAntiAffinity主要实现以运行的Pod为参照，让新创建的Pod和参照Pod不在同一个区域中的功能
+
+它的配置方式和选项跟PodAffinity是一样的。
+
+1. 继续使用上个示例中的目标pod
+
+```shell
+[root@node01]> kubectl get pods -n dev -o wide --show-labels
+NAME                     READY   STATUS    RESTARTS   AGE     IP            NODE    LABELS
+pod-podaffinity-required 1/1     Running   0          3m29s   10.244.1.38   node1   <none>     
+pod-podaffinity-target   1/1     Running   0          9m25s   10.244.1.37   node1   podenv=dev
+```
+
+2. 创建pod-podantiaffinity-require.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-podantiaffinity-required
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:                                           #亲和性设置
+    podAntiAffinity:                                  #设置pod亲和性
+      requiredDuringSchedulingIgnoredDuringExecution: # 硬限制
+      - labelSelector:
+          matchExpressions:                           #匹配podenv的值在["pro"]中的标签
+          - key: podenv
+            operator: In
+            values: ["test"]
+        topologyKey: kubernetes.io/hostname
+```
+
+上面表达的意思是：新Pod必须要与拥有标签podenv=test的pod不在同一个Node上
+
+```shell
+# 创建pod
+[root@node01]> kubectl create -f pod-podantiaffinity-required.yaml
+pod/pod-podantiaffinity-required created
+
+# 查看pod
+# 发现调度到了node02上
+[root@node01]> kubectl get pods pod-podantiaffinity-required -n dev -o wide
+NAME                           READY   STATUS    RESTARTS   AGE   IP            NODE
+pod-podantiaffinity-required   1/1     Running   0          30s   10.244.1.96   node2
+```
+
+
+
 
 
 
