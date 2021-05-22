@@ -2635,7 +2635,135 @@ NAME                           READY   STATUS    RESTARTS   AGE   IP            
 pod-podantiaffinity-required   1/1     Running   0          30s   10.244.1.96   node2
 ```
 
+### 污点和容忍
 
+**污点（Taints）**
+
+前面的调度方式都是站在Pod的角度上，通过在Pod上添加属性，来确定Pod是否要调度到指定的Node上。其实有些时候需要站在Node的角度上，通过在Node上添加**污点**属性，来决定是否允许Pod调度过来。
+
+**Node被设置上污点之后就和Pod之间存在了一种排斥的关系，进而拒绝Pod的调度进来，甚至可以将已经存在的Pod驱逐出去。**
+
+污点的格式为：key=value:effect，key和value是污点的标签，effect是描述污点的作用，有3种作用：
+
+* **PreferNoScheduler**：k8s将尽量避免把Pod调度到具有该污点的Node上，除非没有其他节点可调度
+* **NoScheduler**：k8s将不会把Pod调度到具有该污点的Node上，但不会影响当前Node上已存在的Pod
+* **NoExecute**：k8s将不会把Pod调度到具有该污点的Node上，同时会将Node上已存在的Pod驱离
+
+<img src=".images/image-20210522164448470.png" alt="image-20210522164448470" style="zoom:80%;" />
+
+使用kubectl设置和去除污点的命令示例如下：
+
+```shell
+#设置污点
+kubectl taint nodes node01 key=value:effect
+
+#去除污点
+kubectl taint nodes node01 key:effect-
+
+#去除所有污点
+kubectl taint nodes node01 ley-
+```
+
+污点示例过程
+
+1. 准备节点node1，先停止node2节点
+2. 为node1节点设置一个污点：tag=hello:PreferNoScheduler；然后创建pod1，pod1成功
+3. 修改node1节点的污点为：tag=hello:NoSchedule；然后创建Pod2，此时Pod1正常，pod2失败
+4. 修改node1节点的污点为：tag=hello:NoExecute，然后创建Pod3，3个Pod全部失败
+
+```shell
+# 为node1设置污点(PreferNoSchedule)
+[root@node01]> kubectl taint nodes node1 tag=heima:PreferNoSchedule
+
+# 创建pod1
+[root@node01]> kubectl run taint1 --image=nginx:1.17.1 -n dev
+[root@node01]> kubectl get pods -n dev -o wide
+NAME                      READY   STATUS    RESTARTS   AGE     IP           NODE   
+taint1-7665f7fd85-574h4   1/1     Running   0          2m24s   10.244.1.59   node1    
+
+# 为node1设置污点(取消PreferNoSchedule，设置NoSchedule)
+[root@node01]> kubectl taint nodes node1 tag:PreferNoSchedule-
+[root@node01]> kubectl taint nodes node1 tag=heima:NoSchedule
+
+# 创建pod2
+[root@node01]> kubectl run taint2 --image=nginx:1.17.1 -n dev
+[root@node01]> kubectl get pods taint2 -n dev -o wide
+NAME                      READY   STATUS    RESTARTS   AGE     IP            NODE
+taint1-7665f7fd85-574h4   1/1     Running   0          2m24s   10.244.1.59   node1 
+taint2-544694789-6zmlf    0/1     Pending   0          21s     <none>        <none>   
+
+# 为node1设置污点(取消NoSchedule，设置NoExecute)
+[root@node01]> kubectl taint nodes node1 tag:NoSchedule-
+[root@node01]> kubectl taint nodes node1 tag=heima:NoExecute
+
+# 创建pod3
+[root@node01]> kubectl run taint3 --image=nginx:1.17.1 -n dev
+[root@node01]> kubectl get pods -n dev -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED 
+taint1-7665f7fd85-htkmp   0/1     Pending   0          35s   <none>   <none>   <none>
+taint2-544694789-bn7wb    0/1     Pending   0          35s   <none>   <none>   <none>
+taint3-6d78dbd749-tktkq   0/1     Pending   0          6s    <none>   <none>   <none>
+```
+
+使用kubeadm搭建的集群，默认就会给Master节点添加一个污点标记，所以Pod就不会调度到Master节点上。
+
+**容忍（Toleration）**
+
+上面介绍了污点的作用，可以在node上添加污点用于拒绝Pod调度过来，但是如果就是想将一个Pod调度到一个有污点的Node上去，这时候应该怎么做呢？这就是使用**容忍**。
+
+**污点就是拒绝，容忍就是忽略，Node通过污点拒绝Pod调度上去，Pod通过容忍忽略拒绝。**
+
+容忍的的选项配置
+
+```shell
+[root@master ~]# kubectl explain pod.spec.tolerations
+......
+FIELDS:
+   key                # 对应着要容忍的污点的键，空意味着匹配所有的键
+   value              # 对应着要容忍的污点的值
+   operator           # key-value的运算符，支持Equal和Exists（默认）
+   effect             # 对应污点的effect，空意味着匹配所有影响
+   tolerationSeconds  # 容忍时间, 当effect为NoExecute时生效，表示pod在Node上的停留时间
+```
+
+下面通过一个示例观察结果：
+
+* 上一小节，已经在node1节点上打了NoExecute的污点，此时Pod是调度不上去的。
+
+* 这个小节，可以通过给Pod添加容忍，然后将其调度上去
+
+1. 创建pod-toleration.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-toleration
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  tolerations:            # 添加容忍
+  - key: "tag"            # 要容忍的污点的key
+    operator: "Equal"     # 操作符
+    value: "hello"        # 容忍的污点的value
+    effect: "NoExecute"   # 添加容忍的规则，这里必须和标记的污点规则相同
+```
+
+2. 观察结果
+
+```shell
+# 添加容忍之前的pod
+[root@node01]> kubectl get pods -n dev -o wide
+NAME             READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED 
+pod-toleration   0/1     Pending   0          3s    <none>   <none>   <none>
+
+# 添加容忍之后的pod
+[root@node01]> kubectl get pods -n dev -o wide
+NAME             READY   STATUS    RESTARTS   AGE   IP            NODE    NOMINATED
+pod-toleration   1/1     Running   0          3s    10.244.1.62   node1   <none>
+```
 
 
 
