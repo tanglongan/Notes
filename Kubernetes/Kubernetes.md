@@ -2716,7 +2716,7 @@ taint3-6d78dbd749-tktkq   0/1     Pending   0          6s    <none>   <none>   <
 容忍的的选项配置
 
 ```shell
-[root@master ~]# kubectl explain pod.spec.tolerations
+[root@node01]> kubectl explain pod.spec.tolerations
 ......
 FIELDS:
    key                # 对应着要容忍的污点的键，空意味着匹配所有的键
