@@ -1,4 +1,4 @@
-Typora设置
+Typora图片资源的设置
 
 * 复制到指定路径 √
 * 输入 ./.images/
